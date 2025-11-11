@@ -2,18 +2,18 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import catppuccin from "@catppuccin/starlight";
-
+import starlightKbd from 'starlight-kbd';
 // https://astro.build/config
 export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'luxe game engine',
 			logo: {
-        src: './src/assets/image/luxe-dark.svg',
+				src: './src/assets/image/luxe-dark.svg',
 			},
-      customCss: [
-        './src/custom.css',
-      ],
+			customCss: [
+				'./src/custom.css',
+			],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
 			sidebar: [
 				{
@@ -38,8 +38,14 @@ export default defineConfig({
 				},
 			],
 			plugins: [
-        catppuccin()
-      ]
+				catppuccin(),
+				starlightKbd({
+					types: [
+						{ id: 'mac', label: 'macOS' },
+						{ id: 'other', label: 'Windows/Linux', default: true  },
+					],
+				}),
+			]
 		}),
 	],
 });
