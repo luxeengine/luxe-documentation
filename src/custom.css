@@ -6,3 +6,31 @@
 .sl-markdown-content {
   font-size:  1.1rem;
 }
+
+[data-theme='dark'] starlight-theme-select {
+	& select,
+	& select option,
+	& select option:checked {
+		background-color: var(--sl-color-gray-6);
+		color: var(--sl-color-text);
+	}
+	
+	& select option:hover {
+		background-color: var(--sl-color-accent-high);
+		color: var(--sl-color-text-invert);
+	}
+}
+
+/* moves badge to the left, but not specific enough or controllable from content yet */
+/* 
+.sidebar-content .sl-badge {
+  margin-right: 0.25em;
+  margin-left: 0;
+}
+
+.sidebar-content li a {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 0.5em;
+} */

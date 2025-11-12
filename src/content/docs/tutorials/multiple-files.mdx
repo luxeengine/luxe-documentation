@@ -1,9 +1,18 @@
 ---
 title: Multiple wren files
 description: Using import for multiple wren files
-sidebar:
-  order: 3
 ---
+
+import { Badge } from '@astrojs/starlight/components';
+
+<Badge text="Complexity: low" variant="success" />
+<Badge text="Concepts" variant="tip" />
+<br/><br/>
+
+:::tip[Outcome / Goals]{icon="puzzle"}
+See how we can use `import` to organize our game code.
+:::
+
 
 In your project, you can make more files to separate your code.
 Project scripts are imported as an absolute id, relative to the project root.
