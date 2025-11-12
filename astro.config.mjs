@@ -29,6 +29,10 @@ export default defineConfig({
 					autogenerate: { directory: 'tutorials' },
 				},
 				{
+					label: 'Game Tutorials',
+					autogenerate: { directory: 'tutorials-games' },
+				},
+				{
 					label: 'Manual',
 					autogenerate: { directory: 'manual' },
 				},
