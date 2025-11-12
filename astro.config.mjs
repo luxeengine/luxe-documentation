@@ -41,8 +41,9 @@ export default defineConfig({
 				catppuccin(),
 				starlightKbd({
 					types: [
+						{ id: 'default', label: 'Default Keys', default: true  },
+						{ id: 'windows', label: 'Windows'  },
 						{ id: 'mac', label: 'macOS' },
-						{ id: 'other', label: 'Windows/Linux', default: true  },
 					],
 				}),
 			]
