@@ -1,0 +1,101 @@
+---
+title: Anatomy
+description: A basic anatomy of a luxe project
+---
+
+import { Badge } from '@astrojs/starlight/components';
+
+:::tip[How to start a new project?]{icon="puzzle"}
+Use the luxe launcher, and from the project page, select new project at the top.   
+From there you can select which project outline you want to use as the starting point.
+:::
+
+## Project file
+A luxe project is a folder with a `project.luxe` file inside it. This is the project file.
+Inside your `project.luxe` file, you can set the project `name`, but it usually is set when created.
+
+## Project config
+There's also a project config folder, `luxe.project/`, which is typically where project configuration goes.
+This holds files like the modules used, asset manifest, version info and more.
+
+## Entry
+There's also typically a `game.wren` file, this is your entry point for the game code.
+
+## Outline
+Your project will often be created from a template, called a project `outline`. Your project probably contains an `outline/` folder, this is the template part. The project template gives you an easy starting point ready to go. 
+
+## Running a project
+
+**Running via the luxe editor or code editor**   
+
+You can learn how to run the project via code and via the luxe editor from [this page in the tutorial](/getting-started/create-a-project/#running-the-game).
+
+**Running from a command line**   
+
+You can also run your project from a terminal using `luxe run` from inside the project folder. 
+A shortcut is installed to the last installed version of luxe at `<home>/.luxe/bin/luxe`. 
+
+- **macOS + Layoutinux**: `~/.luxe/bin/luxe run`
+- **Windows**: `c:\Users\<USER>\.luxe\bin\luxe run`
+   
+:::note[Setting the shortcut version]
+You can set the version using the launcher, by right clicking on an installed version of the engine.
+The tools + settings page also has an option to set to an explicit path (e.g dev build mode).
+:::
+
+## project.luxe 
+
+Your project.luxe file is a wren script file with useful hooks.
+
+:::note[WIP parts]
+There's rough edges around these things as they're really old, but are still plenty useful.
+:::
+
+As part of your class, you are handed a `target` object, which includes details like whether the project is being used in the editor, and what commands were used to run it.
+
+```wren
+target.target       //list of targets e.g luxe deploy --target mac --target windows
+target.action       //build, run, deploy etc
+target.host         //host os e.g IO.os()
+target.runtime      //the runtime version e.g 2025.11.1
+```
+
+So if for example you wanted to do specific tasks for the web build, you can use `target` to be specific.
+
+### Hooks
+
+You can see one example `postdeploy` in [this tutorial](/getting-started/build/#additional-flags).
+Here's a list of the current hooks.
+
+```wren
+prebuild() {}
+postbuild() {}
+postdeploy() {}
+prelaunch() {}
+postlaunch() {}
+```
+
+Accessing the command line flags is also possible, so for example if we do `luxe deploy --copy` we can do extra steps to copy the build somewhere.
+
+```wren
+postdeploy() {
+  import "luxe: io" for IO
+  var flags: Flags = IO.flags()
+  var do_copy = flags.has("copy")
+  if(do_copy) {
+    //...
+  }
+}
+```
+
+### entry()
+
+If you make an empty function in your `project.luxe` class, and name it `entry` you can use `luxe entry` to run a headless script engine.
+
+What this means is that no assets will run, no loop will be started, no window is created, making it extremely quick.
+
+This is often used to sketch out Wren code that doesn't rely on those features, like unit tests, project tools and more.
+We've used it for automation to convert content from older forms to newer forms, to process custom data, to write small libraries quickly and so much more.
+It's also useful as a place to test wren concepts quickly.
+
+You can run this mode in vscode as well, setting it as the default build task, allowing very rapid iteration on Wren code.

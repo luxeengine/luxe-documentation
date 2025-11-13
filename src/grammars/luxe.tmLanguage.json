@@ -1,0 +1,145 @@
+{
+  "scopeName": "source.luxe",
+  "name": "luxe",
+  "fileTypes": [
+    "luxe"
+  ],
+  "patterns": [
+    {
+      "begin": "/\\*",
+      "end": "\\*/",
+      "name": "comment.block.luxe"
+    },
+    {
+      "begin": "//",
+      "end": "$\\n?",
+      "name": "comment.line.luxe"
+    },
+    {
+      "begin": "'",
+      "end": "'",
+      "name": "string.quoted.single.luxe"
+    },
+    {
+      "begin": "\"\"\"",
+      "end": "\"\"\"",
+      "name": "string.quoted.triple.luxe"
+    },
+    {
+      "begin": "(?<!\"\")\"",
+      "end": "(?<![^\\\\]\\\\)(?<![^\\\\]\\\\\\\\\\\\)\"",
+      "name": "string.quoted.double.luxe",
+      "patterns": [
+        {
+          "begin": "(?<![^%]%)(?<![^%]%%%)%\\(",
+          "end": "\\)",
+          "name": "string.interpolated.wren",
+          "beginCaptures": {
+            "0": {
+              "name": "string.interpolated.marker.wren"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "string.interpolated.marker.wren"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#nestedParensAndSelf"
+            },
+            {
+              "include": "$self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "begin": "(?<={|{\\s|[^A-Za-z0-9_:@$]do|^do|[^A-Za-z0-9_:@$]do\\s|^do\\s)(\\|)",
+      "end": "(?<!\\|)(\\|)(?!\\|)",
+      "name": "variable.parameter.luxe"
+    },
+    {
+      "match": "\\b(construct|static)\\b",
+      "name": "entity.other.attribute-name.luxe"
+    },
+    {
+      "match": "\\b(class|foreign|import|in|is|null|super|this|var|new)\\b",
+      "name": "keyword.reserved.luxe"
+    },
+    {
+      "match": "\\b(if|else|return|for|while|break|continue)\\b",
+      "name": "keyword.control.flow-control.luxe"
+    },
+    {
+      "match": "\\b(true|false)\\b",
+      "name": "string.boolean.luxe"
+    },
+    {
+      "begin": "(\\#\\w+)\\s*=\\s*\"\"\"",
+      "end": "\"\"\"",
+      "name": "comment.line.luxe.raw"
+    },
+    {
+      "begin": "(\\#\\w+)\\s*[(]",
+      "end": "[)]$",
+      "name": "comment.line.luxe.group"
+    },
+    {
+      "match": "(\\#\\w+)\\s*$",
+      "name": "comment.line.luxe.attr"
+    },
+    {
+      "match": "(\\#\\w+)(?:\\s*=\\s*((?:\\w+)|(?:\".+\")|(?:\"\"\".+\"\"\")))",
+      "name": "comment.line.luxe.attr2"
+    },
+    {
+      "match": "(-|\\.)?\\b[0-9]+(\\.[0-9]+)?\\b",
+      "name": "constant.numeric.luxe"
+    },
+    {
+      "match": "(\\w|[\\+|-|\\*|/|%|=|!|\\^|~|\\||\\?|\\<|\\>|\\&])+(?=\\s*\\()",
+      "name": "support.function.luxe"
+    },
+    {
+      "match": "\\+|-|\\*|/|%|=|!|\\^|~|\\||\\?|\\<|\\>|\\&",
+      "name": "keyword.operator.luxe"
+    },
+    {
+      "match": "[<>]?[\\.]{1,3}[<>]?",
+      "name": "keyword.operator.range.luxe"
+    },
+    {
+      "match": "\\w+(?=\\s*:)",
+      "name": "variable.other.luxe"
+    },
+    {
+      "match": "(?<=\\w\\.)\\w+(?=\\.|\\s|,|;|\\)|\\?|\\+|\\-|=|/)",
+      "name": "support.constant.luxe"
+    },
+    {
+      "match": "\\b([A-Z])\\w+\\b",
+      "name": "entity.name.class.luxe"
+    },
+    {
+      "match": "\\w",
+      "name": "variable.other.luxe"
+    }
+  ],
+  "repository": {
+    "nestedParensAndSelf": {
+      "begin": "\\(",
+      "end": "\\)",
+      "name": "nestedParensAndSelf",
+      "patterns": [
+        {
+          "include": "#nestedParensAndSelf"
+        },
+        {
+          "include": "$self"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,128 @@
+---
+title: Camera
+description: An introduction to using the camera modifier
+---
+
+import { Badge } from '@astrojs/starlight/components';
+
+<Badge text="Complexity: low" variant="success" />
+<Badge text="Tools" variant="tip" />
+<br/><br/>
+
+:::tip[Outcome / Goals]{icon="puzzle"}
+In this tutorial we'll:
+- Learn about the camera modifier
+- Learn to transform the camera 
+- See how to use a 3D or 2D camera 
+:::
+
+## Camera is a modifier
+
+Camera exists within a `World`, and is attached to an `Entity` like other modifiers.
+You can attach a camera to an entity using `Camera.create(entity)`.
+
+```wren
+var camera = Entity.create(world)
+Camera.create(camera)
+Camera.set3D(camera, 60, width/height, 0.1, 100)
+```
+
+You can have as many Cameras in the world as you need, they don't have a cost to exist.
+A camera stores settings for it's view and can be used to render any world.
+
+The `World.render` function accepts an entity with a `Camera` attached. 
+This makes it easy to render the same world from different angles at different times.
+
+## Transform driven
+
+`Camera` uses `Transform` to decide where it will be positioned/oriented. 
+Moving the camera around uses `Transform.set_pos` and related tools. 
+It also means linking the camera to another entity is possible, 
+and using other Transform related tools and modules to work with a camera.
+
+You can use lerp (linear interpolation) to have a camera smoothly follow a player.
+
+```wren
+var target = Transform.get_pos_world(player)
+var pos = Transform.get_pos_world(camera)
+//Math.lerp2D for 2D xy only
+var now = Math.lerp3D(pos, target, speed * delta)
+Transform.set_pos(camera, now.x, now.y, now.z)
+```
+
+## Default camera
+
+Each world keeps track of a **default camera**. This is typically the one rendering uses.
+This is also how camera management code can switch, and how game code can interact without having access to the specific camera at all times.
+
+## Coordinate spaces
+
+The camera controls how we perceive the game world and has a big role.   
+
+### Space Conversions
+
+The camera provides conversion functions, like:
+- World Space to Screen Space
+- Camera (view) space back and forth
+- Clip space and more
+
+You will often need to convert in order to make a game. Examples being: 
+- Displaying an entity position on the HUD 
+  - game world -> screen space -> ui world
+- Converting mouse coordinates from window space to world space 
+
+:::note[Transform spaces]
+Because camera has a projection as well as a `Transform`, it has it's own space conversion functions in addition to `Transform` space conversion tools!
+Use the camera ones when dealing with a camera where it makes sense.
+:::
+
+### The meaning of World Space
+
+The units in the game world are given meaning by us, as a choice!
+We typically use the camera to do that but it's one part of it.
+Make sure you know what coordinate space choice is made in your game.
+
+A camera defaults to 2D set to the window size when created.
+
+In a game, **you control how much of the world you see** using the camera.
+
+Here's some examples where being intentional can make game code easier:
+
+- Pixel art games with a fixed size like 320x200 
+  - The camera displays 320 units x 200 world units on screen
+  - The extra space is handled by letter box or pillar box, or backgrounds
+  - This allows using known/relative units everywhere in game code
+ 
+- A word game or match 3 with a 10 x 10 grid
+  - Camera shows `10 units` vertically (plus hud space)
+  - 10 being at the bottom, origin of `0, 0` being near the top 
+  - The width is calculated from the fixed units, and pillar boxing or backgrounds can be used to cover the extra space 
+  - This makes your game code much simpler: 1 unit is 1 letter/grid item
+
+- Similar in a 3D grid based game
+  - All game code treats the space as 1 unit = 1 grid space 
+  - The camera is configured to present that to the user
+
+## 2D and 3D helpers
+
+You can switch a camera any time between 2D and 3D using `Camera.set2D` and `Camera.set3D`.
+Some functions are 3D specific, like FOV specifics, and some are 2D specific, like `zoom2D` related ones.
+
+## Camera blending and cuts
+
+The Camera provides a few `blend` functions, as well as `cut` functions to work with multiple cameras.
+The default camera can be blended/cut between other cameras easily. This is sometimes called virtual cameras,
+where you have one definitive camera, but use others as virtual. You can switch the default camera to cut as well.
+
+## Camera frustum culling 
+
+A camera doesn't do culling automatically unless asked. Like most things in luxe, your project outline might 
+be configured to automatically cull for you. 
+
+This also means you control when and what is culled, allowing you to cull from one camera, but view the world from another to debug culling issues.
+
+## Editor Visualization
+
+The luxe editor will show what a camera sees when selected, as well as showing the frustum. 
+You can also pin a camera view and keep it showing while doing tweaks, and you can have multiple open as needed. 
+

@@ -3,17 +3,29 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import catppuccin from "@catppuccin/starlight";
 import starlightKbd from 'starlight-kbd';
+
+import luxeGrammar from "./src/grammars/luxe.tmLanguage.json";
+
 // https://astro.build/config
 export default defineConfig({
+  markdown: {
+    shikiConfig: {
+			langs: [{
+        ...luxeGrammar,
+				aliases: ["lx", "wren"],
+      }]
+    },
+	},	
 	integrations: [
 		starlight({
-			title: 'luxe game engine',
-			logo: {
-				src: './src/assets/image/luxe-dark.svg',
+			title: 'luxe docs',
+			expressiveCode: {
+				useStarlightDarkModeSwitch: true,
+				useStarlightUiThemeColors: true,
+				themes: ['catppuccin-frappe', 'catppuccin-latte']
 			},
-			customCss: [
-				'./src/custom.css',
-			],
+			logo: { src: './src/assets/image/luxe-dark.svg', },
+			customCss: ['./src/custom.css' ],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
 			sidebar: [
 				{
@@ -42,7 +54,10 @@ export default defineConfig({
 				},
 			],
 			plugins: [
-				catppuccin(),
+				catppuccin({
+          dark: { flavor: "mocha", accent: "mauve" },
+          light: { flavor: "latte", accent: "pink" }
+				}),
 				starlightKbd({
 					types: [
 						{ id: 'default', label: 'Default Keys', default: true  },
