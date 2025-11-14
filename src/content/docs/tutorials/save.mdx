@@ -1,0 +1,118 @@
+---
+title: Save data
+description: An introduction to using the Save API
+---
+
+import { Badge } from '@astrojs/starlight/components';
+
+<Badge text="Complexity: low" variant="success" />
+<Badge text="Tools" variant="tip" />
+<br/><br/>
+
+:::tip[Outcome / Goals]{icon="puzzle"}
+In this tutorial we'll:
+- Learn about the Save tool
+- See how to store/load save data
+:::
+
+## What can it do
+
+- Save key/values for you
+- Save files and arbitrary data for you
+- Query data, state and existence of data or slots
+- Handle save slots for different users
+- Handle cross platform data management
+
+## Using the save system
+
+First step, import it!
+
+```wren
+import "luxe: save" for Save
+```
+
+## Create a Save system instance 
+
+### Game data storage locations 
+
+The save system will be able to save the data you ask it to in a good place for the platform your game is running on. 
+This is different for each platform, but not something you typically have to think about when using `Save`.
+
+The important thing is that we need to know a little bit of information about your game to store the data in the right spot.
+This includes the "organization" making the game (could be your name, your studio name, etc), and the game name.
+
+### Creating the save system
+
+```wren
+// create a new save system to use
+// loads the default save slot for single saves
+var save = Save.create("organization", "game")
+```
+
+### Creating the save system with unique user ID
+
+If you have a unique user ID (for example on Steam, different steam profiles on the same PC will want their own save slots).
+
+```wren
+Save.create("organization", "game", user_id)
+```
+
+## Save a simple key/value pair 
+
+Say we want to remember the user setting like "camera fov". We can use the simple key value store:
+
+```wren
+Save.set(save, "camera fov", "90")
+```
+
+We can also store data at the user level, instead of at the save slot level.
+For something like a camera setting, the user probably intended to have the same FOV across each save slot.
+It will be up to you to think about the use cases!
+
+```wren
+Save.set(save, "camera fov", "90", SaveScope.user)
+```
+
+## Load a value from key value store 
+
+When you load values from a save, you have to specify a default value for when the save doesn't have the data.
+You can also specify the scope like before
+
+```wren
+//Get some values from the slot
+var name = Save.get(save, "name", "default_name")
+//get user values, like settings
+var setting = Save.get(save, "camera fov", "90", SaveScope.user)
+```
+
+## Saving file data
+
+You can also save files to the save slot or the user data.
+
+```wren
+// Instead of doing key values as strings, we can store a wren map 
+var settings = {
+  "play time": 25602
+}
+
+Save.set_file(save, "settings", LX.stringify(settings))
+
+// Another example, save a screenshot the save 
+var screenshot_data = ...
+Save.set_file(save, "screenshot", screenshot_data)
+```
+
+Another common case is serializing blocks, for example modifier data, custom blocks and more can be serialized as `lx` (json like) or binary data.
+The save system doesn't really care what kind of data you're storing! It just treats it as opaque data.
+
+## Loading file data 
+
+```wren
+var data = Save.get_file(save, "settings")
+//settings is now our wren map again
+var settings = LX.parse(data)
+```
+
+## There's more in the API
+
+Visit the API documentation for more details!

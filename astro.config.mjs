@@ -5,15 +5,22 @@ import catppuccin from "@catppuccin/starlight";
 import starlightKbd from 'starlight-kbd';
 
 import luxeGrammar from "./src/grammars/luxe.tmLanguage.json";
+import yarnGrammar from "./src/grammars/yarnspinner.tmLanguage.json";
 
 // https://astro.build/config
 export default defineConfig({
   markdown: {
     shikiConfig: {
-			langs: [{
-        ...luxeGrammar,
-				aliases: ["lx", "wren"],
-      }]
+			langs: [
+				{
+					...luxeGrammar,
+					aliases: ["lx", "wren"],
+				},
+				{
+					...yarnGrammar,
+					aliases: ["yarn"],
+				}
+			]
     },
 	},	
 	integrations: [
