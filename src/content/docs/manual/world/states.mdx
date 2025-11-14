@@ -5,12 +5,8 @@ description: An introduction to using states
 
 import { Badge } from '@astrojs/starlight/components';
 
-<Badge text="Complexity: low" variant="success" />
-<Badge text="Tools" variant="tip" />
-<br/><br/>
-
 :::tip[Outcome / Goals]{icon="puzzle"}
-In this tutorial we'll:
+In this guide we'll:
 - Learn about states as a concept
 - Create states in a custom modifier
 :::
@@ -24,14 +20,14 @@ If you don't use them, they don't exist (so no overhead!).
 A simple example would be a menu.scene you create, where it might have main, settings, credits states for the menu. 
 This is what that looks like right now, in the scene script:
 
-![](../../../assets/image/tutorial/modifiers/states.1.png)
+![](../../../../assets/image/tutorial/modifiers/states.1.png)
 
 That's it! The names match the variable, this is important for later as we'll see.
 
 Our scene or system also has the states variable, which we use to change states directly like so states.goto(scene, main). 
 We do that inside of ready() in a scene script to set the default state. We can also add behaviour to the state, like so:
 
-![](../../../assets/image/tutorial/modifiers/states.2.png)
+![](../../../../assets/image/tutorial/modifiers/states.2.png)
 
 Here we have a function that's called on entering the state, leaving the state, 
 and what we call a transition. This transition is a function that returns true or false, 
@@ -47,21 +43,21 @@ As an example, take an a character that has an idle state. Within our idle state
 
 Let's see how we declare that now, and this time we'll do it inside a modifier (per entity we're attached to).
 
-![](../../../assets/image/tutorial/modifiers/states.3.png)
+![](../../../../assets/image/tutorial/modifiers/states.3.png)
 
 This API is declarative, this code doesn't do anything per se, it just defines the state hierarchy for us! 
 This also shows why we use the names, notice how the type of the idle variable is a known type.
 
-![](../../../assets/image/tutorial/modifiers/states.4.png)
+![](../../../../assets/image/tutorial/modifiers/states.4.png)
 
 That means we get nice completion on our states, like this:
 
-![](../../../assets/image/tutorial/modifiers/states.5.png)
+![](../../../../assets/image/tutorial/modifiers/states.5.png)
 
 ## Simpler states
 For the simpler states like looking around or tapping a foot we can do something simple, like this:
 
-![](../../../assets/image/tutorial/modifiers/states.6.png)
+![](../../../../assets/image/tutorial/modifiers/states.6.png)
 
 ## Transition helpers
 
@@ -69,7 +65,7 @@ We've seen `goto_after` but there are a handful of other helpers.
 
 Wires are the event system backbone for scenes and modifiers, so if we receive an event we can use that as a transition. We can also key on our Data class, listening for changes and responding to raw data changes.
 
-![](../../../assets/image/tutorial/modifiers/states.7.png)
+![](../../../../assets/image/tutorial/modifiers/states.7.png)
 
 ## Other notes
 

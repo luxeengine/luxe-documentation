@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import catppuccin from "@catppuccin/starlight";
 import starlightKbd from 'starlight-kbd';
+import starlightAutoSidebar from 'starlight-auto-sidebar';
 
 import luxeGrammar from "./src/grammars/luxe.tmLanguage.json";
 import yarnGrammar from "./src/grammars/yarnspinner.tmLanguage.json";
@@ -48,10 +49,6 @@ export default defineConfig({
 					autogenerate: { directory: 'tutorials' },
 				},
 				{
-					label: 'Game Tutorials',
-					autogenerate: { directory: 'tutorials-games' },
-				},
-				{
 					label: 'Manual',
 					autogenerate: { directory: 'manual' },
 				},
@@ -61,6 +58,7 @@ export default defineConfig({
 				},
 			],
 			plugins: [
+				starlightAutoSidebar(),
 				catppuccin({
           dark: { flavor: "mocha", accent: "mauve" },
           light: { flavor: "latte", accent: "pink" }

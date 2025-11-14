@@ -13,6 +13,10 @@ pre span {
   font-style: normal !important;
 }
 
+.sidebar-content ul ul span.group-label span {
+  font-size: 1rem !important;
+}
+
 [data-theme='dark'] starlight-theme-select {
 	& select,
 	& select option,

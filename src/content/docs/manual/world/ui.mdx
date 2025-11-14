@@ -3,14 +3,8 @@ title: UI
 description: An introduction to making UI in luxe
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Complexity: low" variant="success" />
-<Badge text="Tools" variant="tip" />
-<br/><br/>
-
 :::tip[Outcome / Goals]{icon="puzzle"}
-In this tutorial we'll:
+In this guide we'll:
 - Learn how to use the UI modifier from code
 - How to do flexible layout in the UI 
 - How to create UI in the world editor
@@ -153,7 +147,7 @@ and allows you to toggle it at runtime for debugging in game.
 
 Also relevant: A `Control` doesn't have a name by default, you have to set one using `Control.set_id(control, "some name")`.
 
-![](../../../assets/image/tutorial/ui/ui.debug.vis.png)
+![](../../../../assets/image/tutorial/ui/ui.debug.vis.png)
 
 ## UI flex layout
 
@@ -183,11 +177,11 @@ As a container, how will my contents be laid out?
 - Column - A vertical stack. Each child added will be vertically arranged.
 - Row - A horizontal stack. Each child will be arranged horizontally, but can wrap.
 
-![](../../../assets/image/tutorial/ui/layout.contain.type.png)
+![](../../../../assets/image/tutorial/ui/layout.contain.type.png)
 
 You can also choose whether items are arranged from the start or end of the container, or spread out.
 
-![](../../../assets/image/tutorial/ui/layout.contain.png)
+![](../../../../assets/image/tutorial/ui/layout.contain.png)
 
 #### Flags
 

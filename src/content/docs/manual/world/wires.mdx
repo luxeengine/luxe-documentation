@@ -3,14 +3,8 @@ title: Wires (events)
 description: An introduction to using wires to send and receive events
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Complexity: low" variant="success" />
-<Badge text="Tools" variant="tip" />
-<br/><br/>
-
 :::tip[Outcome / Goals]{icon="puzzle"}
-In this tutorial we'll:
+In this guide we'll:
 - Learn about wires as a concept
 - Connect to them in code and the editor
 - Create our own wires in a custom modifier
@@ -24,7 +18,7 @@ Not every user is going to be writing system code, that's why modules exist, to 
 
 A big goal of luxe is to be approachable and accessible to a wider range of users, and one of the tools to do that comes in the form of what we call Wires. 
 
-![](../../../assets/image/tutorial/modifiers/wires.png)
+![](../../../../assets/image/tutorial/modifiers/wires.png)
 
 :::note
 Wires are our version of events used to decouple code. Sometimes called signal/slots (QT, other UI libraries), they've been around for ages and you might already be familiar.
@@ -48,7 +42,7 @@ We'll take a look at a Trigger example. How do we define a wire to send across?
 
 We define a variable and tag it with #wire and give it an id. 
 
-![](../../../assets/image/tutorial/modifiers/wires.2.png)
+![](../../../../assets/image/tutorial/modifiers/wires.2.png)
 
 :::tip[Wire IDs]{icon="puzzle"}
 The id is local to the modifier/scene script, and is designed this way to allow renaming functions and variables without worrying about it breaking links.
@@ -57,7 +51,7 @@ The id is local to the modifier/scene script, and is designed this way to allow 
 With that, we now have an outgoing wire. 
 How do we send a message on the wire? Imagine we've connected to physics, here is how we trigger it:
 
-![](../../../assets/image/tutorial/modifiers/wires.3.png)
+![](../../../../assets/image/tutorial/modifiers/wires.3.png)
 
 ## Incoming connection
 
@@ -65,13 +59,13 @@ How do we make a function visible to send a message to, so it can show up on the
 
 We tag a function with `#wire` and an ID. That's it! 
 
-![](../../../assets/image/tutorial/modifiers/wires.4.png)
+![](../../../../assets/image/tutorial/modifiers/wires.4.png)
 
 There's more to the system, like connecting via code. 
 These show up in code completion and such. 
 Here's a real code example below, and you'll notice we can also send full typed blocks across the wires - the contact argument shown. 
 
-![](../../../assets/image/tutorial/modifiers/wires.5.png)
+![](../../../../assets/image/tutorial/modifiers/wires.5.png)
 
 ## From code
 
