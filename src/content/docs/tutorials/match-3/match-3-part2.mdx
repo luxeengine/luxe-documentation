@@ -1,5 +1,5 @@
 ---
-title: Match 3 - Part 2
+title: Match 3 - Animating changes
 description: A tutorial on making a match 3
 ---
 
@@ -11,5 +11,753 @@ import { Badge } from '@astrojs/starlight/components';
 
 :::tip[Outcome / Goals]{icon="puzzle"}
 In this tutorial we'll:
-- Make a simple match 3 game
+- Continue from part 1 to animate changes
+- Learn about Wren Fibers to 'pause' code
+- Implement simple animated changes using a timer
 :::
+
+## Feedback for the player is crucial
+
+As you may have found out from the previous part, the game doesn't feel good even though it's technically complete.
+We need to be able to animate the changes as visual feedback for the player, to make sense of what's actually happening.
+
+As you get more experience making more games, you'll learn when and where that feedback is easiest added, and most beneficial.
+Sometimes polishing too early can be unhelpful, so try to find a balance.
+
+## Changing the flow of code
+
+There's a lot of different ways to approach this particular problem, but we're going to lean on a feature in the Wren language we're using to make it easy - Fibers.
+
+As we've learned by now, code is executed one line after the other. Our game's match logic looks like this:
+
+```wren
+var matches = find_all_matches(data)
+
+while(matches.count > 0) {
+  for(match in matches) {
+    var x = match[0]
+    var y = match[1]
+    set_cell(data, x, y, 0)
+  }
+
+  //drop tiles downward
+  drop_blocks(data)
+  //fill the new spaces made
+  fill_top(data)
+
+  // cascading changes if we find any more
+  matches = find_all_matches(data)
+}
+```
+
+## What would we like to happen?
+
+This would be an easy way to handle the visual feedback problem (see the comments):
+
+```wren
+var matches = find_all_matches(data)
+
+while(matches.count > 0) {
+  for(match in matches) {
+    var x = match[0]
+    var y = match[1]
+    set_cell(data, x, y, 0)
+  }
+
+  //STOP: ANIMATE BLOCKS DISAPPEARING
+
+  drop_blocks(data)
+
+  //STOP: ANIMATE BLOCKS FALLING
+
+  fill_top(data)
+
+  //STOP: ANIMATE BLOCKS APPEARING
+
+  matches = find_all_matches(data)
+}
+```
+
+If we could stop the code while we do some animation, that would work. That's what fibers can do!
+
+## What is a Fiber?
+
+It sounds more complicated than it is!
+
+In a previous tutorial, we spoke about [function calls as a series of doors](/getting-started/draw-and-input/#functions-what-are-they) in a hallway. 
+Each door is entered, and returns to the hallway to continue. The hallway itself the lines of code. 
+
+**What a fiber can do is say "hold that thought", leave the hallway, and come back later,** to the same spot. As if it never left!
+
+It can suspend what it's doing, and resume. That sounds a lot like what we want.
+
+## The game as a fiber 
+
+Your `ready` function is the entry point to your game, and it also runs in 'the main fiber'.
+
+We do want the game to keep drawing though... so we can't suspend the main fiber. That would make the game hang.
+
+## How to make a fiber
+
+So how do we use a fiber? The `Fiber` API is built into Wren and allows us to make one on demand, giving it a chunk of code to run when the fiber runs.
+
+```wren
+var fiber = Fiber.new {
+  Log.print("This code will not run until it's told to")
+}
+```
+
+Notice that the code won't do anything yet, all we have is a fiber in our hand. We are holding the option to enter the hallway. 
+
+## Running a fiber 
+
+So how do we run that code inside the fiber? We use `call()` to make it happen.
+
+```wren
+//we are in the main hallway here
+Log.print("Hello here")
+
+var fiber = Fiber.new {
+  Log.print("This code will run")
+}
+
+//enter the new hallway
+fiber.call()
+
+//when that hallway ends, we continue our main hallway
+Log.print("This will happen after")
+```
+
+If you drop that into your `ready` function inside `game.wren` - you'll see this in the output:
+
+```wren
+Hello here
+This code will run
+This will happen after
+```
+
+We can `call` a fiber multiple times, if the hallway hasn't ended (if it has we will get an error).
+That allows us to suspend / leave the hallway any time from within.
+
+## Pausing a fiber 
+
+We "yield" control of our hallway to the one that we came from (the main one, in this case).
+
+```wren
+//main hallway
+Log.print("Hello here")
+
+var fiber = Fiber.new {
+  Log.print("1. This code will run first")
+
+  //leave this hallway. "yield" to the main hallway
+  Fiber.yield() 
+
+  Log.print("3. This code will run last")
+}
+
+// enter the new hallway 
+// until it leaves OR ends: prints 1.
+fiber.call()
+
+// when it pauses, we come back here
+Log.print("2. This will happen second")
+
+// re-enter the new hallway
+fiber.call()
+
+Log.print("Hello there")
+```
+
+Even though our code isn't in the numbered order, the log should print it in order like this!
+
+```wren
+Hello here
+1. This code will run first
+2. This will happen second
+3. This code will run last
+Hello there
+```
+
+## Loops in a fiber
+
+Fibers become especially handy when you can loop repeatedly.
+One example is fading out a `Sprite` by setting it's alpha (opacity) value.
+
+It would be nice if we could do this:
+
+```wren
+while(alpha > 0) {
+  alpha = alpha - 0.1
+}
+```
+
+But the problem is this would block our main fiber, causing the game to hang, and we wouldn't SEE the changes animate.
+
+We can wrap it in a fiber, and call it once per frame:
+
+```wren
+var fiber = Fiber.new {
+  while(alpha > 0) {
+    alpha = alpha - 0.1
+    Fiber.yield()
+  }
+}
+
+//inside `tick`, update the fiber every frame
+if(!fiber.isDone) fiber.call()
+```
+
+The important thing to understand is that the game loop is still running, and the game loop is updating the fiber every frame. 
+This is exactly how we will tackle the problem!
+
+## How we will use a fiber
+
+- We can put our process matches logic into a fiber 
+- We can `call` the fiber one per frame, from our system tick 
+- BUT only if there are no visual changes pending  
+
+So here's what we need:
+
+- A variable to store the fiber
+- A list of 'Busy' items. 
+- If something is busy, the logic part will wait
+- If nothing is busy, progress the logic
+
+## Tracking busy state
+
+... using a unique key for each grid location.
+
+Our game is grid based, so we can track whether a cell is busy using it's x/y location. 
+An easy way to do that is using a `Map`. A map is similar to a list, it is a collection but each item in the collection has a _key_, like a name, to fetch the value.
+
+```wren
+var value = map[key]
+```
+
+To keep things simple, we can use a `String` as the key, making a unique key for our grid location.
+
+```wren
+var key = "%(x)-%(y)"
+```
+
+<details>
+<summary>Cantor pairing - `IO.pair_16` in luxe</summary>
+Luxe provides a tool - `IO.pair_16(x, y)` - which returns a number that matches the unique location. 
+The reverse is possible, with `IO.unpair_16(key, into)`. 
+
+This allows you to use a single number as the key, and get the x/y location back easily. 
+This is a 16 bit function, so has a limited range of values, and works with negative coordinates.
+It's used by the Arcade module spatial hash.
+</details>
+
+#### Types of Busy state
+
+We have the following states we'd like to animate: 
+
+- Creating a block
+- Removing a block
+- Moving a block downward
+- Swapping two blocks
+
+We'll make a small helper class in our `grid.modifier.wren` file that looks like this.
+You can put it _before_ your `System` class.
+ 
+```wren
+class Busy {
+
+  // the type of busy we're tracking
+  var kind: Num = 0
+
+  // our grid location
+  var x: Num = -1
+  var y: Num = -1
+
+  // the destination location for a move
+  var dest_x: Num = -1
+  var dest_y: Num = -1
+  // for a swap, one of them is the primary cell
+  var primary: Bool = true
+
+  // how long the busy has been going
+  var timer: Num = 0
+  // how long the busy will want to run for
+  var wait: Num = 1
+
+  // The Busy kinds we're tracking
+  static CREATE { 1 }
+  static DESTROY { 2 }
+  static MOVE { 3 }
+  static SWAP { 4 }
+
+  // We'll also add helpers
+  valid { x != -1 && y != -1 && kind != 0 }
+  done { timer >= wait }
+
+  // We use this to create a busy state
+  construct new(in_x: Num, in_y: Num, in_kind: Num) {
+    x = in_x
+    y = in_y 
+    kind = in_kind
+  }
+
+  // And a function to update our state
+  tick(delta: Num) {
+    timer = timer + delta
+  }
+
+} //Busy
+```
+
+## Tracking the busy state
+
+In our `System` class we add some variables for handling this.
+
+One for the fiber we'll use later, and one for the busy state of each cell.
+
+```diff lang=wren
+class System is Modifier {
+
+  var draw: Draw = null
+  var style: PathStyle = PathStyle.new()
+  var rng: Random = Random.new()
+
++  //our busy handling
++  var fiber: Fiber = null
++  var busy_cells = {}
+
+```
+
+We'll also add a new function to our `System` class called `mark_busy`.
+This will track the busy state for the cell and return the busy object for further configuring.
+
+```wren
+mark_busy(x: Num, y: Num, kind: Num) : Busy {
+  var busy = Busy.new(x, y, kind)
+  busy_cells["%(x)-%(y)"] = busy
+  return busy
+}
+```
+
+## Updating the busy state 
+
+Add a new function to our `System` called `tick_busy`:
+
+```wren
+tick_busy(data: Data, delta: Num) {
+  
+  // If there's a fiber, and we're not busy, progress it
+  // If we're busy, do nothing
+  if(fiber && !fiber.isDone) {
+    if(busy_cells.count == 0) fiber.call()
+    if(fiber.isDone) fiber = null
+  }
+
+  // If there's any busy tasks, update them
+  for(busy: Busy in busy_cells.values) {
+
+    busy.tick(delta)
+
+    // If the task is done, handle the outcome
+    if(busy.done) {
+
+      if(busy.kind == Busy.DESTROY) {
+        
+      }
+
+    } //if busy.done
+
+    // Clean up completed tasks 
+    if(busy.valid == false || busy.done) {
+      busy_cells.remove("%(busy.x)-%(busy.y)")
+    }
+  }
+
+} //tick_busy
+```
+
+We call it from our `tick` function inside our `System`.
+We can add it right at the beginning of the each loop.
+
+```diff lang=wren
+tick(delta: Num) {
+
+  var mouse = Camera.screen_point_to_world(Camera.get_default(world), Input.mouse_x(), Input.mouse_y())
+
+  each {|entity: Entity, data: Data|
+
++    // tick busy tasks
++    tick_busy(data, delta)
+
+...
+```
+
+## Adding our fiber
+
+Let's add the fiber to our `process_matches` function.
+
+We're going to wrap the while loop inside of it using `Fiber.new`.
+
+```diff lang=wren
+process_matches(data: Data) {
+  
+  var matches = find_all_matches(data)
+
++  fiber = Fiber.new {
+
+    while(matches.count > 0) {
+      ...
+    }
+
++  } //Fiber.new
+
+} //process_matches
+```
+
+If you run the game, it'll still work!
+
+That's because our tick function is running the fiber every frame, and when it's done it clears it.
+
+## Our first task: destroyed blocks
+
+Instead of immediately changing the grid like we did before, we're going to mark the cell as busy.
+
+:::caution[Stuck]
+Don't miss the second bit! If you don't pause the fiber, the matches are never cleared, and the while loop becomes infinite.
+:::
+
+```diff lang=wren
+process_matches(data: Data) {
+  
+  var matches = find_all_matches(data)
+
+  fiber = Fiber.new {
+
+    while(matches.count > 0) {
+      for(match in matches) {
+        var x = match[0]
+        var y = match[1]
+-        set_cell(data, x, y, 0)
++        mark_busy(x, y, Busy.DESTROY)
+      }
+
++      //pause while tasks are happening
++      Fiber.yield()
+   ...
+```
+
+And inside our `tick_busy` function, when a destroy task completes, that's where we change the grid:
+
+```diff lang=wren
+// If the task is done, handle the outcome
+if(busy.done) {
+
+  if(busy.kind == Busy.DESTROY) {
++    set_cell(data, busy.x, busy.y, 0)
+  }
+
+} //if busy.done
+```
+
+If we ran the game, we can see that the match happens, it waits for 1 second, and then it does the rest! And there's a second match as a result, it also waits.
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/destroy.wait.mp4" type="video/mp4"></source>
+</video>
+
+## Animate the destroy
+
+Now that our destroy is waiting for us, we can change our drawing code to animate the change.
+
+Inside the tick function, where we do our drawing, we can add the busy handling.
+Keeping it simple, we'll add an x/y offset for movement, and a scale for create/destroy.
+
+We 
+
+```diff lang=wren "* scale"
+for(y in 0 ... data.height) {
+
+  var row: GridRow = data.rows[y]
+
+  for(x in 0 ... data.width) {
+    
+    var kind = row.columns[x]
+    if(kind == 0) continue
+
++    var y_offset = 0
++    var x_offset = 0
++    var scale = 1
++
++    var busy: Busy = busy_cells["%(x)-%(y)"]
++    if(busy) {
++      // how far into the wait are we?
++      // this is a 0...1 range value
++      var ratio = busy.timer / busy.wait
++
++      if(busy.kind == Busy.DESTROY) {
++        // since we're destroying, scale down from 1
++        // and don't let it go too small
++        scale = ( 1.0 - ratio ).max(0.1)
++      }
++    }
+
+    var pos = grid_to_world(data, x, y)
++        pos.x = pos.x + x_offset
++        pos.y = pos.y - y_offset
+    var color = colors[kind - 1]
+    var sides = sides[kind - 1]
+    var half_width = block_width / 2
+    var half_height = block_height / 2
++    var radius_x = half_width * 0.9 * scale
++    var radius_y = half_height * 0.9 * scale
+```
+
+And there we go! If we run the game, notice how much easier it is to understand the changes:
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/destroy.animate.mp4" type="video/mp4"></source>
+</video>
+
+## Animate the create
+
+For create, we DO want to modify the grid immediately because otherwise there won't be anything to animate!
+So we add a busy task for the create after we modify the grid:
+
+```diff lang=wren
+fill_top(data: Data) {
+  for (x in 0 ... data.width) {
+    for (y in 0 ... data.height) {
+      if (get_cell(data, x, y) == 0) {
+        set_cell(data, x, y, rng.int(data.block_kinds) + 1)
++        mark_busy(x, y, Busy.CREATE)
+      }
+    } //each row
+  } //each column
+} //fill_top
+```
+
+And we have to pause the logic inside `process_matches`, after we create the blocks:
+
+```diff lang=wren
+//fill the new spaces made
+fill_top(data)
+
++Fiber.yield()
+```
+
+And finally inside our `tick` function, handle the create behaviour by scaling upward, after the destroy:
+
+```diff lang=wren
+if(busy.kind == Busy.DESTROY) {
+  // since we're destroying, scale down from 1
+  // and don't let it go too small
+  scale = ( 1.0 - ratio ).max(0.1)
+} 
+
++  if(busy.kind == Busy.CREATE) {
++  // since we're creating, scale from from 0 to 1
++  scale = ratio.max(0.1)
++}
+```
+
+Now we can see the new tiles are animating too:
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/create.animate.mp4" type="video/mp4"></source>
+</video>
+
+## Animate drops
+
+Similar to the others, we first change `drop_blocks` to add the busy task.
+
+Also note that we add another `Fiber.yield()` here, this is because we add one busy task for each tile dropping,
+we can wait for each one to finish, which can feel satisfying to watch. That's why we have a `wait = 1` here, 
+we're going to tweak the timing later!
+
+```diff lang=wren
+drop_blocks(data: Data) {
+  for (x in 0 ... data.width) {
+    var write_y = data.height - 1
+    for (y in (data.height - 1) .. 0) {
+      if (get_cell(data, x, y) != 0) {
+        if (y != write_y) {
+-          set_cell(data, x, write_y, get_cell(data, x, y))
+-          set_cell(data, x, y, 0)
++          var busy = mark_busy(x, y, Busy.MOVE)
++          busy.dest_y = write_y
++          busy.wait = 1
+        }
+        write_y = write_y - 1
+      }
++      Fiber.yield()
+    }
+  }
+} //drop_blocks
+```
+
+Then we add the main pause into `process_matches` after `drop_blocks`:
+
+```diff lang=wren
+//drop tiles downward
+drop_blocks(data)
+
++Fiber.yield()
+```
+
+We move the grid change logic to the `tick_busy` function where we handle complete tasks, 
+we use the data from the task to update the grid when it completes:
+
+```diff lang=wren
+// If the task is done, handle the outcome
+if(busy.done) {
+
+  if(busy.kind == Busy.DESTROY) {
+    set_cell(data, busy.x, busy.y, 0)
+  }
+
++  if(busy.kind == Busy.MOVE) {
++    set_cell(data, busy.x, busy.dest_y, get_cell(data, busy.x, busy.y))
++    set_cell(data, busy.x, busy.y, 0)
++  }
+
+} //if busy.done
+```
+
+Inside our `tick` function where we do the drawing, we calculate the distance the block wants to travel.
+We use our ratio (how far into the timer we are) to offset our `y_offset`. This moves the block visually.
+
+```diff lang=wren
+if(busy.kind == Busy.DESTROY) {
+  // since we're destroying, scale down from 1
+  // and don't let it go too small
+  scale = ( 1.0 - ratio ).max(0.1)
+}
+
+if(busy.kind == Busy.CREATE) {
+  // since we're creating, scale from from 0 to 1
+  scale = ratio.max(0.1)
+}
+
++  if(busy.kind == Busy.MOVE) {
++  var distance = block_height * (busy.dest_y - busy.y)
++  y_offset = distance * ratio
++}
+```
+
+Even easier to understand what's happening visually! We're going to tweak the timings later to feel better.
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/move.animate.mp4" type="video/mp4"></source>
+</video>
+
+## Animate the swap 
+
+Our final piece is animating the swap. This one is very similar to move, but has a little extra details.
+We already have all the pauses we need, so this will just be handling the busy tasks.
+
+Previously we split our swap function into 2 steps, so we remove the second step, and add 2 busy tasks:
+
+```diff lang=wren
+swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
+  if (!is_adjacent(x1, y1, x2, y2)) return false
+-  complete_swap(data, x1, y1, x2, y2)
++  var busy = mark_busy(x1, y1, Busy.SWAP)
++      busy.dest_x = x2
++      busy.dest_y = y2
++
++  var busy2 = mark_busy(x2, y2, Busy.SWAP)
++      busy2.primary = false
++      busy2.dest_x = x1 
++      busy2.dest_y = y1
+}
+```
+
+Inside `tick_busy` where we process busy tasks completing, we add another case for `Busy.SWAP`.
+That's where we complete the swap!
+
+```diff lang=wren
+if(busy.done) {
+
+  if(busy.kind == Busy.DESTROY) {
+    set_cell(data, busy.x, busy.y, 0)
+  }
+
+  if(busy.kind == Busy.MOVE) {
+    set_cell(data, busy.x, busy.dest_y, get_cell(data, busy.x, busy.y))
+    set_cell(data, busy.x, busy.y, 0)
+  }
+
++  if(busy.kind == Busy.SWAP) {
++    if(busy.primary) {
++      complete_swap(data, busy.x, busy.y, busy.dest_x, busy.dest_y)
++    }
++  }
+
+} //if busy.done
+```
+
+And the last step is the visual change, inside `tick` with the others.
+This is similar to the move: calculate the distance 
+
+```diff lang=wren
+if(busy.kind == Busy.DESTROY) {
+  // since we're destroying, scale down from 1
+  // and don't let it go too small
+  scale = ( 1.0 - ratio ).max(0.1)
+}
+
+if(busy.kind == Busy.CREATE) {
+  // since we're creating, scale from from 0 to 1
+  scale = ratio.max(0.1)
+}
+
+if(busy.kind == Busy.MOVE) {
+  var distance = block_height * (busy.dest_y - busy.y)
+  y_offset = distance * ratio
+}
+
++if(busy.kind == Busy.SWAP) {
++  var dist_x = block_width * (busy.dest_x - busy.x)
++  var dist_y = block_height * (busy.dest_y - busy.y)
++  x_offset = dist_x * ratio
++  y_offset = dist_y * ratio
++}
+```
+
+Now we can see all the mechanics in the game working with animated timing...
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/swap.animate.mp4" type="video/mp4"></source>
+</video>
+
+## Final touches
+
+The timing is a little too slow to feel good, so let's adjust them.
+
+Inside our `Busy` class variables, we adjust the wait timing to `0.3` seconds.
+
+```wren ins="0.3"
+// how long the busy will want to run for
+var wait: Num = 0.3
+```
+
+And the wait for falling blocks is a little too long even at `0.3`, we'll set it to `0.1`. 
+
+Inside `drop_blocks` we'll change the wait line:
+
+```diff lang=wren
+- busy.wait = 1
++ busy.wait = 0.1
+```
+
+And if we run the game now, it plays a lot more fluid!
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/timings.mp4" type="video/mp4"></source>
+</video>
+
+## Next time!
+
+We've successfully used Wren Fibers to pause logic in our game, so that we can animate the visual state!
+
+In the next part, we're going to use the world systems to visualize the grid instead of directly with `Draw`.
