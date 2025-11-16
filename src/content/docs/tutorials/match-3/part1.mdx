@@ -87,6 +87,10 @@ What's important is thinking about how we work so that we don't paint ourselves 
 
     Create an empty **file** named `grid.modifier.wren` in the new `system/` folder.
 
+3. #### Run the build
+
+    This will generate the contents for you to edit.
+
 3. #### Edit details
 
     We update our system definition with some details.
@@ -174,6 +178,7 @@ To do that we're going to need a few imports at the top of your `grid.modifier.w
 ```wren
 import "luxe: input" for Input, MouseButton, Key
 import "luxe: draw" for Draw, PathStyle
+import "luxe: world" for Camera
 import "luxe: color" for Color
 import "random" for Random
 ```
@@ -557,6 +562,7 @@ class Data {
 
   ... //existing code 
 
++  #doc = "Currently selected cell"
 +  var selected: Float2 = [-1,-1]
 
 }

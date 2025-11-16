@@ -1,8 +1,9 @@
 ---
-title: Match 3 - Part 3
+title: Match 3 - After the prototype
 description: A tutorial on making a match 3
 ---
 
+import { Steps } from '@astrojs/starlight/components';
 import { Badge } from '@astrojs/starlight/components';
 
 <Badge text="Complexity: low" variant="success" />
@@ -11,5 +12,343 @@ import { Badge } from '@astrojs/starlight/components';
 
 :::tip[Outcome / Goals]{icon="puzzle"}
 In this tutorial we'll:
-- Make a simple match 3 game
+- Convert our prototype code into a more structured game
+- Convert our visualization to use Sprite
 :::
+
+## Input ownership
+
+Instead of having a bunch of code inside our grid logic tick function, 
+we can move the logic into a modifier dedicated to handling input for the grid.
+
+This allows the input handling to be more nuanced, exposing it's own API and tools for the game to use without muddying up the grid logic.
+
+:::note
+We use the word ownership because thinking about which code/system owns a responsibility helps keep our code well structured.
+:::
+
+## Grid changes 
+
+The grid doesn't really care about _input_ specifically, it cares about a _cursor_ location and a _selected_ location.
+
+We'll start by changing our `grid.modifier.wren`, specifically the `Data` class, to add a cursor:
+
+```diff lang=wren
+... //existing code
+
+#doc = "Currently selected cell"
+var selected: Float2 = [-1,-1]
++#doc = "Currently highlighted cell"
++var cursor: Float2 = [-1,-1]
+```
+
+This allows us to set the cursor from the grid input system.
+
+## The Grid API
+
+We'll also need to speak to the grid from elsewhere in our game, which is what the `API` class is for!
+There's a few pieces of the puzzle that we'll need. 
+
+It would be nice to be able to convert coordinates to the grid,
+check if a coordinate is within the grid space, and interact with the grid (e.g a select, or swap).
+
+The API class is the _user facing interface_ to our system. 
+
+What that means is:
+- We should name things clearly
+- We should add type annotations to describe our intention
+- We should add documentation to the endpoints
+
+### Speaking to our system from API
+
+Inside our API we have a few helpers to access our system or data for an entity.
+- `system(entity: Entity) : System`
+  - get our system code from an entity with Grid attached
+- `system_in(world: World) : System`
+  - get our system in the given world
+- `get(entity: Entity) : Data`
+  - return the data for the given entity
+
+This gives us the tools to communicate with the entity, or system based on common inputs to a system.
+
+:::note[Wrap or not to wrap?]
+It's common for an API function to be a nicer way to access our system or data.
+
+So a question that comes up: does the logic happen in the `API` class directly, 
+or do we put all the logic inside the system, and simply forward the call?
+
+This is really a personal choice! We often wrap the system (like below) and keep all implementation 
+details inside the `System` class, but there's definitely been cases where we have inline API code. 
+:::
+
+### The API additions
+
+```wren
+class Grid is API {
+
+  #doc = "Convert a world space position to grid cell coordinates"
+  static world_to_grid(entity: Entity, world_x: Num, world_y: Num) : Float2 {
+
+    if(!Grid.has(entity)) return [0, 0]
+    
+    var system: System = system(entity)
+    var data: Data = get(entity)
+
+    return system.world_to_grid(data, world_x, world_y)
+
+  } //world_to_grid
+
+  #doc = "Convert a grid coordinate to world space position"
+  static grid_to_world(entity: Entity, grid_x: Num, grid_y: Num) : Float2 {
+
+    if(!Grid.has(entity)) return [0, 0]
+    
+    var system: System = system(entity)
+    var data: Data = get(entity)
+
+    return system.grid_to_world(data, grid_x, grid_y)
+
+  } //grid_to_world
+
+  #doc = "Returns true if the given grid coordinates are within the grid"
+  static in_grid(entity: Entity, grid_x: Num, grid_y: Num) : Bool {
+
+    if(!Grid.has(entity)) return false
+    
+    var system: System = system(entity)
+    var data: Data = get(entity)
+
+    return system.in_grid(data, grid_x, grid_y)
+
+  } //in_grid
+
+  #doc = "Interact with the grid, selecting or swapping as needed"
+  static interact(entity: Entity) : None {
+ 
+    var system: System = system(entity)
+    system.interact(entity)
+  
+  } //interact
+
+} // Grid
+```
+
+## The implementation details
+
+Now that we've exposed an API forwarding calls to our system, 
+we should add the implementation details for those functions.
+
+The `in_grid` and coordinate functions already existed, so we only need one: `interact`.
+
+Add the following function to your `System` class. 
+Note that it takes the entity this time, and is a lot cleaner and easier to understand. 
+
+```wren
+interact(entity: Entity) {
+
+  var data: Data = get(entity)
+  var cursor = data.cursor
+  var selected = data.selected
+
+  //trying to select the same cell? deselect and do nothing
+  if(data.selected.x == cursor.x && data.selected.y == cursor.y) {
+    data.selected = [-1, -1]
+    return
+  }
+
+  //if we have a selection, and it's adjacent to the cursor, swap
+  if(is_adjacent(selected.x, selected.y, cursor.x, cursor.y)) {
+    swap(data, selected.x, selected.y, cursor.x, cursor.y)
+    data.selected = [-1, -1]
+    return
+  }
+
+  //no selection, and no swap, update our selection
+  data.selected = [cursor.x, cursor.y]
+
+} //interact
+```
+
+## Cleaning up the tick function
+
+Here's the code we'll be removing from the `tick` function in our grid `System` class:
+
+```diff lang=wren
+// tick busy tasks
+tick_busy(data, delta)
+
+-var grid_mouse = world_to_grid(data, mouse.x, mouse.y)
+-var valid_mouse = in_grid(data, grid_mouse.x, grid_mouse.y)
+-
+-var selected = data.selected
+-var had_selected = selected.x != -1 && selected.y != -1
+-if(had_selected) {
+-  var selected_pos = grid_to_world(data, selected.x, selected.y)
+-  Draw.rect(draw, 
+-    selected_pos.x, selected_pos.y, 0, 
+-    block_width, block_height, 0, style.color(Color.pink))
+-}
+-
+-if(valid_mouse) {
+-  var mouse_draw_pos = grid_to_world(data, grid_mouse.x, grid_mouse.y)
+-  Draw.rect(draw, 
+-    mouse_draw_pos.x, mouse_draw_pos.y, 0, 
+-    block_width, block_height, 0, style.color(Color.black))
+-
+-  if(Input.mouse_state_released(MouseButton.left)) {
+-    if(had_selected) {
+-      var allow_swap = is_adjacent(selected.x, selected.y, grid_mouse.x, grid_mouse.y)
+-      if(selected.x == grid_mouse.x && selected.y == grid_mouse.y) {
+-        data.selected = [-1, -1]
+-      } else if(allow_swap) {
+-        swap(data, selected.x, selected.y, grid_mouse.x, grid_mouse.y)
+-        data.selected = [-1, -1]
+-      }
+-    } else {
+-      data.selected = grid_mouse
+-    }
+-  } //if left click
+-  
+-} //if valid mouse
+
+for(y in 0 ... data.height) {
+
+```
+
+And here's the code that will take it's place:
+
+```diff lang=wren
+// tick busy tasks
+tick_busy(data, delta)
+
++var selected = data.selected
++var cursor = data.cursor
++var valid_cursor = in_grid(data, cursor.x, cursor.y)
++
++//if we have a selection, draw it
++if(in_grid(data, selected.x, selected.y)) {
++  var draw_pos = grid_to_world(data, selected.x, selected.y)
++  Draw.rect(draw, 
++    draw_pos.x, draw_pos.y, 0, 
++    block_width, block_height, 0, style.color(Color.pink))
++}
++
++//if we have a cursor, draw that
++if(in_grid(data, cursor.x, cursor.y)) {
++  var draw_pos = grid_to_world(data, cursor.x, cursor.y)
++  Draw.rect(draw, 
++    draw_pos.x, draw_pos.y, 0, 
++    block_width, block_height, 0, style.color(Color.black))
++}
+
+for(y in 0 ... data.height) {
+```
+
+That's it for the grid changes! Let's add the input system.
+
+## The input system
+
+Create a new modifier for the grid input:
+
+<Steps>
+
+1. #### `system/grid_input.modifier.wren`
+
+    Create an empty **file** named `grid_input.modifier.wren` in the `system/` folder.
+
+2. #### Run the build
+
+    This will generate the contents for you to edit.
+
+2. #### Edit details
+
+    We update our system definition with some details.
+
+    ```wren ins="GridInput" ins="Match3 Grid Input" ins="**Input handling for Match 3 Grid**. Contains the mouse input handling and communicates it to the grid"
+      #api
+      #display = "Match3 Grid Input"
+      #desc = "**Input handling for Match 3 Grid**. Contains the mouse input handling and communicates it to the grid" 
+      #icon = "luxe: image/modifier/modifier.svg"
+      class GridInput is API {
+        //add public facing API here
+      }
+    ```
+
+</Steps>
+
+And like before, we attach it to the same entity as the grid.
+This is an assumption the input system will make.
+
+Back inside of `game.wren`:
+
+```diff lang=wren
+import "system/grid.modifier" for Grid
++import "system/grid_input.modifier" for GridInput
+
+class Game is Ready {
+
+  var grid: Entity = Entity.none
+
+  construct ready() {
+
+    super("ready! %(width) x %(height) @ %(scale)x")
+
+    grid = Entity.create(world, "grid")
+    Grid.create(grid)
++    GridInput.create(grid)
+
+  } //ready
+```
+
+## The input handling logic
+
+Back inside of `grid_input.modifier.wren` we're going to need to add some imports at the top of the file:
+
+```wren
+import "luxe: input" for Input, MouseButton, Key
+import "luxe: world" for Camera
+
+//we'll speak to the grid API 
+import "system/grid.modifier" for Grid
+```
+
+And here's our tick function, inside of `System`, inside the `grid_input.modifier.wren` file:
+
+```wren
+tick(delta: Num) {
+
+  var mouse = Camera.screen_point_to_world(Camera.get_default(world), Input.mouse_x(), Input.mouse_y())
+  var interact = Input.mouse_state_released(MouseButton.left)
+
+  each {|entity: Entity, data: Data|
+
+    var grid_mouse = Grid.world_to_grid(entity, mouse.x, mouse.y)
+
+    //If the cursor is valid
+    if(Grid.in_grid(entity, grid_mouse.x, grid_mouse.y)) {
+      
+      //set it before we interact, so it's up to date
+      Grid.set.cursor(entity, grid_mouse)
+      
+      //Interact with the grid  
+      if(interact) {
+        Grid.interact(entity)
+      }
+
+    } else {
+
+      //If not inside the grid, just set it to a well known value
+      Grid.set.cursor(entity, [-1, -1])
+    
+    }
+
+  } //each
+
+} //tick
+
+```
+
+We can now run the game, and nothing would have changed! It should work exactly the same.
+But, things are much cleaner and clearer.
+
+(tutorial in progress... please hold)
