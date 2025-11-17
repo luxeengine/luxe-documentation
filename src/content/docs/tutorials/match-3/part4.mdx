@@ -1,0 +1,36 @@
+---
+title: Match 3 - Sprite visuals
+description: A tutorial on making a match 3
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+<Badge text="Complexity: low" variant="success" />
+<Badge text="Game Tutorial" variant="tip" />
+<br/><br/>
+
+:::tip[Outcome / Goals]{icon="puzzle"}
+In this tutorial we'll:
+- Use `Sprite` instead of `Draw` to visualize the blocks
+:::
+
+## Sprite visuals: why?
+
+There's nothing wrong with our current visuals, we could easily use `Draw` and polish things up and call it a day!
+
+Though, luxe provides tools that are higher level, and make a lot of things easier, like animation, sprite effects and more.
+
+(Plus this is a tutorial on taking a game from a prototype to a structured project!)
+
+So the next step makes sense to use sprites instead of just shapes.
+
+## The world systems
+
+We made our grid use `Transform`, which means our sprites can be **linked** to the grid, 
+and they'll automatically follow and scale as the grid does. It would still allow local transform changes, 
+like falling and swapping as offsets like we had before.
+
+`Sprite` provides effects, like outlines, shadows, shine and others we can use to give feedback and add polish.
+
+We can also use `Anim` with the `Sprite` modifier to animate sprite frames, if our blocks had 

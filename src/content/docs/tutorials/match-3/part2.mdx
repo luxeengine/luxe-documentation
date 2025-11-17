@@ -318,8 +318,6 @@ One for the fiber we'll use later, and one for the busy state of each cell.
 ```diff lang=wren
 class System is Modifier {
 
-  var draw: Draw = null
-  var style: PathStyle = PathStyle.new()
   var rng: Random = Random.new()
 
 +  //our busy handling

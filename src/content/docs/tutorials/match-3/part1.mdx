@@ -188,11 +188,11 @@ And inside our system, we'll create a draw context, and a random number generato
 ```diff lang=wren
 class System is Modifier {
 
++  var rng: Random = Random.new()
+
++  //debug visualization
 +  var draw: Draw = null
 +  var style: PathStyle = PathStyle.new()
-+  var rng: Random = Random.new()
-+
-+  //debug visualization
 +  var grid_left = 100
 +  var grid_bottom = 64
 +  var block_width = 64
