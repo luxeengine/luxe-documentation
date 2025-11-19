@@ -5,6 +5,7 @@ description: A tutorial on making a match 3
 
 import { Steps } from '@astrojs/starlight/components';
 import { Badge } from '@astrojs/starlight/components';
+import { FileTree } from '@astrojs/starlight/components';
 
 <Badge text="Complexity: low" variant="success" />
 <Badge text="Game Tutorial" variant="tip" />
@@ -34,3 +35,430 @@ like falling and swapping as offsets like we had before.
 `Sprite` provides effects, like outlines, shadows, shine and others we can use to give feedback and add polish.
 
 We can also use `Anim` with the `Sprite` modifier to animate sprite frames, if our blocks had 
+
+## The Sprite image assets 
+
+We've made a few sprites for this tutorial. You can save these images into your project folder under `image/`:
+
+<FileTree>
+- ...
+- **image/**  - create this, and add the files into this folder
+  - **hexagon.png**
+  - **pentagon.png**
+  - **square.png**
+  - **star.png**
+  - **triangle.png**
+- luxe.project/
+- outline/
+- system/
+- game.wren
+- project.luxe
+</FileTree>
+
+---
+Star - [Download](/images/tutorials/match3/star.png):
+![](/images/tutorials/match3/star.png)
+
+---
+Circle - [Download](/images/tutorials/match3/circle.png):
+![](/images/tutorials/match3/circle.png)
+
+--- 
+Triangle - [Download](/images/tutorials/match3/triangle.png): 
+![](/images/tutorials/match3/triangle.png)
+
+--- 
+Square - [Download](/images/tutorials/match3/square.png):
+![](/images/tutorials/match3/square.png)
+
+--- 
+Pentagon - [Download](/images/tutorials/match3/pentagon.png):
+![](/images/tutorials/match3/pentagon.png)
+
+--- 
+Hexagon - [Download](/images/tutorials/match3/hexagon.png):
+![](/images/tutorials/match3/hexagon.png)
+
+## Sprite Animation
+
+Let's display a sprite in the middle of the screen, and animate it.
+
+Add the following lines and read through them:
+
+```diff lang=wren
+construct ready() {
+
+  super("ready! %(width) x %(height) @ %(scale)x")
+
+  grid = Entity.create(world, "grid")    
+  Grid.create(grid)
+  GridInput.create(grid)
+  GridVisuals.create(grid)
+
+  Transform.create(grid)
+  Transform.set_pos(grid, 64, 64)
+
++  var entity = Entity.create(world)
++  Anim.create(entity)
++  Sprite.create(entity, Assets.image("image/star"))
++  Sprite.set_auto_size(entity, false)
++  Sprite.set_size(entity, 256, 256)
++  Transform.create(entity)
++  Transform.set_pos(entity, width/2, height/2)
++
++  Sprite.animate(entity)
++        .loop(true)
++        .grid(4,6, 0,24)
++        .commit()
+
+} //ready
+```
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/sprite.animate.mp4" type="video/mp4"></source>
+</video>
+
+## Grid change events
+
+In order for the grid visual system to know when to create/destroy a sprite, we'll send events from the grid using **Wires**.
+
+Wires send events for other systems to listen to, and they can also send typed data across the wire.
+
+### Grid change data
+
+Since our event is going to need to send some info like the x/y location, the kind of block, and the change type, we'll need to create a data block for that!
+
+To do that we create a `.block.wren` file, 
+
+<Steps>
+
+1. #### `system/grid_change.block.wren`
+
+    Create an empty **file** named `grid_change.block.wren` in the `system/` folder.
+    We'll keep this alongside our grid system.
+
+2. #### Add the data class contents
+
+    This is similar to our `Data` class in a modifier, it's just a standalone data type.
+
+    ```wren
+    #block = data
+    class GridChange {
+      #doc = "The grid coordinate"
+      var coord: Float2 = [-1, -1]
+      #doc = "The change kind"
+      var change: GridChangeType = GridChangeType.none
+      #doc = "The kind of block"
+      var kind: Num = -1
+    }
+
+    #option
+    class GridChangeType {
+      static none { "none" }
+      static create { "create" }
+      static destroy { "destroy" }
+    }
+    ```
+
+</Steps>
+
+### Grid `change` wire 
+
+Before we add the wire, we're going to import the new type we made. 
+At the top of our `grid.modifier.wren` file, we can import this:
+
+```wren
+//system/grid.modifier.wren
+import "system/grid_change.block" for GridChange, GridChangeType
+```
+
+[An outgoing wire](/manual/world/wires) requires making a wire variable and tagging it with an number ID. 
+
+In the variable section of our `System` class, we add a new wire variable like this:
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+class System is Modifier {
+
+  var rng: Random = Random.new()
+
++  #wire = 1
++  #type = "system/grid_change.block"
++  var change: Wire = Wire.create()
+```
+
+### Create event 
+
+We have two places that create blocks: `fill_top` and `reset_grid`. 
+We'll add a new helper function called `create_block()` inside our `System` class in `grid.modifier.wren`.
+
+This is where we'll use the new wire we created.
+
+The wire offers a `prepare()` function, which returns the data object we'll send. 
+We configure it first, and then send the event along with our data.
+
+```wren
+//system/grid.modifier.wren...System
+create_block(data: Data, x: Num, y: Num, kind: Num) {
+  set_cell(data, x, y, kind)
+  var event: GridChange = change.prepare()
+      event.coord = [x, y]
+      event.change = GridChangeType.create
+      event.kind = kind
+  change.send(data.entity, event)
+}
+```
+
+We'll change the two places where a block is created, and have them call this instead:
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+reset_grid(data: Data) {
+  for (y in 0 ... data.height) {
+    for (x in 0 ... data.width) {
+      var kind = safe_tile(data, x, y)
+-      set_cell(data, x, y, kind) 
++      create_block(data, x, y, kind)
+    }
+  }
+}
+```
+
+And then `fill_top` as well:
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+fill_top(data: Data) {
+  for (x in 0 ... data.width) {
+    for (y in 0 ... data.height) {
+      if (get_cell(data, x, y) == 0) {
+-        set_cell(data, x, y, rng.int(data.block_kinds) + 1)        
++        var kind = rng.int(data.block_kinds) + 1
++        create_block(data, x, y, kind)
+        mark_busy(x, y, Busy.CREATE)
+      }
+    } //each row
+  } //each column
+} //fill_top
+```
+
+## Timing 
+
+There's one consideration we haven't had to think too much about: ordering of systems.
+
+Which system goes first: `Grid` or `GridVisuals`? The answer isn't specified ("undefined"). 
+We can't rely on it being one or the other, instead we want to be more intentional. 
+
+If the grid system sends the events first, and then grid visuals is initialized, it won't respond in time to creating the grid.
+
+Our system has a `#phase` attribute which controls this. 
+We have a few tools for this, but we can also nudge things slightly using a number on the phase:
+
+```wren ins=" = 1"
+//system/grid.modifier.wren...System
+#system
+#phase(on, tick = 1)
+class System is Modifier {
+```
+
+By adding `= 1` here, it makes sure the grid will run after the visuals!
+
+## Grid Visual change 
+
+The event doesn't _have_ to be handled by any particular system. The event is broadcast in case.
+
+### Connecting to a wire
+
+If we want to actually respond to it, we'll need to listen for that event on the wire and do something in response.
+
+Like before, we start by importing the event types and while we're here, import `Anim` as well:
+
+```diff lang=wren
+//system/grid_visuals.modifier.wren
+import "luxe: world" for Anim
+import "system/grid.modifier" for Grid, GridRow, Busy
++import "system/grid_change.block" for GridChange, GridChangeType
+```
+
+Now, inside our `System` init function, we'll connect to the Grid change wire:
+
+```diff lang=wren
+//system/grid_visuals.modifier.wren...System
+init(world: World) {
+  Log.print("init `%(This)` in world `%(world)`")
+
+  draw = Draw.create(World.render_set(world))
+  style.color = Color.black
+  style.thickness = 4
+
++  Grid.connect.change(world) {|entity: Entity, event: GridChange|
++    if(event.change == GridChangeType.create) {
++      create_block(entity, event.coord.x, event.coord.y, event.kind)
++    }
++  }
+}
+
+```
+
+### System vs entity 
+
+It's important to notice that the systems are communicating, and for a specific type, there is only one system per world.
+
+All that means is that the system is the one listening, 
+not the individual entities! We receive an entity that the event relates to.
+
+In our case, this is the grid, but if we had say, a row of grids, 
+or multiple match 3 grids around the world in space, we'd still respond at the system level. 
+
+### Creating blocks as `Sprite`s
+
+We can cut the test code from `game.wren` (removing it) that animated the Sprite and shape it to our needs.
+Add a function to the `System` class:
+
+```wren
+//system/grid_visuals.modifier.wren...System
+create_block(entity: Entity, x: Num, y: Num, kind: Num) {
+
+  var data = get(entity)
+
+  var block = Entity.create(world)
+  Anim.create(block)
+  Sprite.create(block, Assets.image("image/star"))
+  Sprite.set_auto_size(block, false)
+  Sprite.set_size(block, data.block_width, data.block_height)
+  Transform.create(block)
+
+  var pos = grid_to_world(data, x+0.5, y-0.5)
+  Transform.set_pos(block, pos.x, pos.y)
+
+  Sprite.animate(block)
+        .loop(true)
+        .grid(4,6, 0,24)
+        .commit()
+
+} //create_block
+```
+
+That should look something like this!
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/grid.sprites.mp4" type="video/mp4"></source>
+</video>
+
+### Tracking and cleaning up
+
+If we don't clean up the entities we created, they'd stick around forever. 
+We need a way to track them so we can destroy them too.
+
+Since this isn't user facing data and is temporary, we can store it in the `System` class.
+We'll use the same kind of key we did before like `blocks["%(x)-%(y)"]` to track them across the grid.
+
+Since our `System` deals with entities, we'll track that per entity too. Add a `visuals` map to your `System` class.
+
+```diff lang=wren
+//system/grid_visuals.modifier.wren...System
+class System is Modifier {
+  
+  ...
+
+  var visuals: Map = {}
+
+```
+
+Inside `attach` we can initialize the blocks map for the entity.
+In `detach`, we clear the visuals associated with the entity:
+
+```diff lang=wren
+//system/grid_visuals.modifier.wren...System
+  attach(entity: Entity, data: Data) {
+    Log.print("attached to `%(Entity.name(entity))` `%(entity)` - `%(This)`")
++    visuals[entity] = {}
+  }
+
+  detach(entity: Entity, data: Data) {
+    Log.print("detached from `%(Entity.name(entity))` `%(entity)` - `%(This)`")
++    var blocks = visuals.remove(entity)
++    blocks.values.each {|block: Entity|
++      Entity.destroy(block)
++    }
+  }
+ ```
+
+### Shapes
+
+Since we'd like the shape kinds to not all be a star, we'd also change `create_block` to use a different image for each shape kind.
+To do that we'll make an array in `System`, just like we had one for `sides` before:
+
+```diff lang=wren
+//system/grid_visuals.modifier.wren...System
++var shapes = [
++  "circle",
++  "triangle",
++  "square",
++  "pentagon",
++  "hexagon",
++  "star",
++]
+var sides = [32, 3, 4, 5, 6, 32]
+```
+
+Now we can use that in `create_block`, and also store the entity we create in the visuals map.
+
+```diff lang=wren ins="%(image_name)"
+//system/grid_visuals.modifier.wren...System
+create_block(entity: Entity, x: Num, y: Num, kind: Num) {
+  
+  var data = get(entity)
+
++  var blocks = visuals[entity]
++  var image_name = shapes[kind - 1]
+
+  var block = Entity.create(world)
+  Anim.create(block)
++  Sprite.create(block, Assets.image("image/%(image_name)"))
+  Sprite.set_auto_size(block, false)
+  Sprite.set_size(block, data.block_width, data.block_height)
+  Transform.create(block)
+
+  var pos = grid_to_world(data, x+0.5, y-0.5)
+  Transform.set_pos(block, pos.x, pos.y)
+
+  Sprite.animate(block)
+        .loop(true)
+        .grid(4,6, 0,24)
+        .commit()
+
++  blocks["%(x)-%(y)"] = block
+
+} //create_block
+```
+
+And just like that! We can see the shapes match the `Draw` versions.
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/grid.sprites.1.mp4" type="video/mp4"></source>
+</video>
+
+## Moving sprites
+
+We already have the logic moving busy task items, we can apply that to our sprites.
+
+
+
+## Other grid events
+
+We'll need to handle the `destroy` and `swap` events so our sprites can respond to them.
+
+```wren
+//system/grid_visuals.modifier.wren...System
+destroy_block(entity: Entity, x: Num, y: Num) {
+  
+  var blocks = visuals[entity]
+  var block = blocks.remove("%(x)-%(y)")
+
+  if(Entity.valid(block)) {
+    Entity.destroy(block)
+  }
+
+} //destroy_block
+```
