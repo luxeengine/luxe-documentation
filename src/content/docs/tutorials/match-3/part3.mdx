@@ -16,6 +16,14 @@ In this tutorial we'll:
 - add a `GridInput` and `GridVisuals` system to do so
 :::
 
+## See it in motion 
+
+Part 3 is largely about re-organizing our code into a neater structure.
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/timings.mp4" type="video/mp4"></source>
+</video>
+
 ## Grid Input ownership
 
 Instead of having a bunch of code inside our grid logic tick function, 
@@ -987,4 +995,8 @@ each {|entity: Entity, data: Data|
 
 This means if we changed our z value on the transform, it will respect it allowing us to put a background behind or things in front as expected.
 
-(tutorial continuing... please hold)
+## Next time!
+
+In the next part, we're going to use the world systems to visualize the grid instead of directly with `Draw`.
+
+Onto part 4!

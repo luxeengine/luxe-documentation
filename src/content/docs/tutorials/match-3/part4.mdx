@@ -6,6 +6,7 @@ description: A tutorial on making a match 3
 import { Steps } from '@astrojs/starlight/components';
 import { Badge } from '@astrojs/starlight/components';
 import { FileTree } from '@astrojs/starlight/components';
+import { Card } from '@astrojs/starlight/components';
 
 <Badge text="Complexity: low" variant="success" />
 <Badge text="Game Tutorial" variant="tip" />
@@ -107,8 +108,8 @@ construct ready() {
 +  Transform.set_pos(entity, width/2, height/2)
 +
 +  Sprite.animate(entity)
-+        .loop(true)
-+        .grid(4,6, 0,24)
++        .loop()
++        .grid(4,6, 1,24)
 +        .commit()
 
 } //ready
@@ -144,10 +145,14 @@ To do that we create a `.block.wren` file,
     ```wren
     #block = data
     class GridChange {
-      #doc = "The grid coordinate"
-      var coord: Float2 = [-1, -1]
       #doc = "The change kind"
       var change: GridChangeType = GridChangeType.none
+      #doc = "Whether this is the start or end event (default true)"
+      var start: Bool = true
+      #doc = "The grid coordinate for the block"
+      var coord: Float2 = [-1, -1]  
+      #doc = "The grid coordinate for the other block (swap only)"
+      var other: Float2 = [-1, -1]
       #doc = "The kind of block"
       var kind: Num = -1
     }
@@ -157,6 +162,7 @@ To do that we create a `.block.wren` file,
       static none { "none" }
       static create { "create" }
       static destroy { "destroy" }
+      static swap { "swap" }
     }
     ```
 
@@ -197,6 +203,8 @@ This is where we'll use the new wire we created.
 The wire offers a `prepare()` function, which returns the data object we'll send. 
 We configure it first, and then send the event along with our data.
 
+We also move our actual grid change into here for convenience.
+
 ```wren
 //system/grid.modifier.wren...System
 create_block(data: Data, x: Num, y: Num, kind: Num) {
@@ -209,7 +217,7 @@ create_block(data: Data, x: Num, y: Num, kind: Num) {
 }
 ```
 
-We'll change the two places where a block is created, and have them call this instead:
+We'll change the two places where a block is created, and have them call this instead. In `reset_grid`:
 
 ```diff lang=wren
 //system/grid.modifier.wren...System
@@ -265,7 +273,7 @@ By adding `= 1` here, it makes sure the grid will run after the visuals!
 
 ## Grid Visual change 
 
-The event doesn't _have_ to be handled by any particular system. The event is broadcast in case.
+The event doesn't _have_ to be handled by any particular system. The event is broadcast in anyone needs it.
 
 ### Connecting to a wire
 
@@ -293,9 +301,9 @@ init(world: World) {
 
 +  Grid.connect.change(world) {|entity: Entity, event: GridChange|
 +    if(event.change == GridChangeType.create) {
-+      create_block(entity, event.coord.x, event.coord.y, event.kind)
++      create_block(entity, event)
 +    }
-+  }
++  } // Grid.connect.change
 }
 
 ```
@@ -313,17 +321,20 @@ or multiple match 3 grids around the world in space, we'd still respond at the s
 ### Creating blocks as `Sprite`s
 
 We can cut the test code from `game.wren` (removing it) that animated the Sprite and shape it to our needs.
-Add a function to the `System` class:
+Add this `create_block` function to the `System` class in our grid visuals system:
 
 ```wren
 //system/grid_visuals.modifier.wren...System
-create_block(entity: Entity, x: Num, y: Num, kind: Num) {
+create_block(entity: Entity, event: GridChange) {
 
   var data = get(entity)
+  var x = event.coord.x 
+  var y = event.coord.y
+  var kind = event.kind
 
-  var block = Entity.create(world)
+  var block = Entity.create(world, "grid-%(x)-%(y)")
   Anim.create(block)
-  Sprite.create(block, Assets.image("image/star"))
+  Sprite.create(block, Assets.image("image/%(image_name)"))
   Sprite.set_auto_size(block, false)
   Sprite.set_size(block, data.block_width, data.block_height)
   Transform.create(block)
@@ -332,8 +343,8 @@ create_block(entity: Entity, x: Num, y: Num, kind: Num) {
   Transform.set_pos(block, pos.x, pos.y)
 
   Sprite.animate(block)
-        .loop(true)
-        .grid(4,6, 0,24)
+        .loop()
+        .grid(4,6, 1,64)
         .commit()
 
 } //create_block
@@ -353,7 +364,8 @@ We need a way to track them so we can destroy them too.
 Since this isn't user facing data and is temporary, we can store it in the `System` class.
 We'll use the same kind of key we did before like `blocks["%(x)-%(y)"]` to track them across the grid.
 
-Since our `System` deals with entities, we'll track that per entity too. Add a `visuals` map to your `System` class.
+Since our `System` is world level, and we're dealing with entities, we'll track these per entity. 
+Add a `visuals` map to your `System` class:
 
 ```diff lang=wren
 //system/grid_visuals.modifier.wren...System
@@ -366,6 +378,8 @@ class System is Modifier {
 ```
 
 Inside `attach` we can initialize the blocks map for the entity.
+This is a map of blocks for each grid visual modifier instance!
+
 In `detach`, we clear the visuals associated with the entity:
 
 ```diff lang=wren
@@ -406,14 +420,17 @@ Now we can use that in `create_block`, and also store the entity we create in th
 
 ```diff lang=wren ins="%(image_name)"
 //system/grid_visuals.modifier.wren...System
-create_block(entity: Entity, x: Num, y: Num, kind: Num) {
-  
+create_block(entity: Entity, event: GridChange) {
+
   var data = get(entity)
+  var x = event.coord.x 
+  var y = event.coord.y
+  var kind = event.kind
 
 +  var blocks = visuals[entity]
 +  var image_name = shapes[kind - 1]
 
-  var block = Entity.create(world)
+  var block = Entity.create(world, "grid-%(x)-%(y)")
   Anim.create(block)
 +  Sprite.create(block, Assets.image("image/%(image_name)"))
   Sprite.set_auto_size(block, false)
@@ -424,9 +441,9 @@ create_block(entity: Entity, x: Num, y: Num, kind: Num) {
   Transform.set_pos(block, pos.x, pos.y)
 
   Sprite.animate(block)
-        .loop(true)
-        .grid(4,6, 0,24)
-        .commit()
+        .loop()
+        .grid(4,6, 1,64)
+        .commit() 
 
 +  blocks["%(x)-%(y)"] = block
 
@@ -439,26 +456,435 @@ And just like that! We can see the shapes match the `Draw` versions.
   <source src="/video/tutorials/match3/grid.sprites.1.mp4" type="video/mp4"></source>
 </video>
 
-## Moving sprites
+### Single frame animation
 
-We already have the logic moving busy task items, we can apply that to our sprites.
+While it is neat to see our animation working, having all the blocks animating at all times can be a bit much.
 
+Instead we'd like to just set it to the first frame of the animation, so it shows a static image of the block.
 
+We can do that using the `Sprite.set_uv` function. This function takes a rectangle in 0...1 range.
+Since our grid is 4x6, we can use 1/4 and 1/6 to get the value we want:
+
+Inside `create_block` change it to this:
+
+```diff lang="wren" ins=",1"
+-  Sprite.animate(block)
+-        .loop()
+-        .grid(4,6, 1,24)
+-        .commit() 
+
++Sprite.set_uv(block, 0, 0, 1/4, 1/6)
+```
 
 ## Other grid events
 
 We'll need to handle the `destroy` and `swap` events so our sprites can respond to them.
 
+Add two more cases in the `init` function:
+
+```diff lang=wren
+//system/grid_visuals.modifier.wren...System
+Grid.connect.change(world) {|entity: Entity, event: GridChange|
+  if(event.change == GridChangeType.create) {
+    create_block(entity, event)
+  }
+
++  if(event.change == GridChangeType.destroy) {
++    destroy_block(entity, event)
++  } 
++  
++  if(event.change == GridChangeType.swap) {
++    swap_block(entity, event)
++  }
+} //Grid.connect.change
+```
+
+### Visuals: block destroy event
+
+In our visuals system class we can add a function to handle destroying a block.
+Our `GridChange` event has a `start` flag, to tell us whether this is the start or end of a task.
+We'll use that to animate the sprite spinning on the way out, and then destroy the entity when done.
+
+We also use `rate` to speed up the animation, we run it 4x faster so we get a chance to see it (we'll tweak timings later).
+
 ```wren
 //system/grid_visuals.modifier.wren...System
-destroy_block(entity: Entity, x: Num, y: Num) {
-  
-  var blocks = visuals[entity]
-  var block = blocks.remove("%(x)-%(y)")
+destroy_block(entity: Entity, event: GridChange) {
 
-  if(Entity.valid(block)) {
+  var blocks = visuals[entity]
+  var key = "%(event.coord.x)-%(event.coord.y)"
+  var block = blocks[key]
+
+  if(event.start) {
+    Sprite.animate(block)
+          .loop()
+          .rate(4)
+          .grid(4,6, 1,24)
+          .commit()
+  } else {
+    blocks.remove(key)
     Entity.destroy(block)
   }
 
 } //destroy_block
 ```
+
+### Visuals: block swap event
+
+Our goal: 
+- While a swap takes place, animate the tiles doing a flip (our animation!)
+- Keep the visual representation of the grid matching the logical one 
+
+Since we're tracking blocks by a key that includes their location, when a swap takes place
+we have to update our blocks map to match. This is a literal swap! **We tell the entity that is now lives at a new home.**
+
+We also use `Sprite.animate` once again to **play an animation**. 
+This time we use `count(num: Num)` instead of `loop()` because we only want the animation
+to play through once. When an animation ends, it'll leave the sprite on the end frame, which works for us!
+
+```wren
+//system/grid_visuals.modifier.wren...System
+swap_block(entity: Entity, event: GridChange) {
+
+  var data = get(entity)
+  
+  var blocks = visuals[entity]
+  var key1 = "%(event.coord.x)-%(event.coord.y)"
+  var key2 = "%(event.other.x)-%(event.other.y)"
+  var block1 = blocks[key1]
+  var block2 = blocks[key2]
+
+  if(event.start) {
+
+    if(Entity.valid(block1)) {
+      Sprite.animate(block1)
+          .count(1)
+          .rate(2)
+          .grid(4,6, 1,24)
+          .commit()
+    }
+    
+    if(Entity.valid(block2)) {
+      Sprite.animate(block2)
+          .count(1)
+          .rate(2)
+          .grid(4,6, 1,24)
+          .commit()
+    }
+
+    return
+  } 
+
+  //since our logical grid has changed underneath us, swap the visual block references
+  blocks[key2] = block1
+  blocks[key1] = block2
+  
+} //swap_block
+```
+
+### Visuals: block positions
+
+We have one more place to update our visuals: the tick function that handled Busy tasks.
+Since our code already works here to move things around, we can use it to move our sprites around as well.
+
+Inside our `tick` function, inside the grid loop, we can add a few lines just before it draws the shape to update the position, 
+and we'll update the scale as well.
+
+```diff lang=wren
+//system/grid_visuals.modifier.wren...System
+...
+
++var block: Entity = blocks["%(x)-%(y)"]
++if(Entity.valid(block)) {
++  Transform.set_pos(block, pos.x + half_width, pos.y + half_width)
++  Transform.set_scale(block, scale, scale)
++}
+
+Draw.ngon_solid(draw, pos.x + half_width, pos.y + half_height, depth, radius_x, radius_y, sides, 90, color)
+
+```
+
+## Grid: send the other events
+
+The last piece of the puzzle is updating the `Grid` system to send the destroy and swap events.
+Switch back to the `grid.modifier.wren` to finish that!
+
+### Destroy event start
+
+Inside process matches, when we've found a match, we send the destroy start event:
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+process_matches(data: Data) {
+  
+  var matches = find_all_matches(data)
+
+  fiber = Fiber.new {
+
+    while(matches.count > 0) {
+      for(match in matches) {
+        var x = match[0]
+        var y = match[1]
+        var busy = mark_busy(x, y, Busy.DESTROY)
++        var event: GridChange = change.prepare()
++            event.coord = [x, y]
++            event.change = GridChangeType.destroy
++            event.start = true
++        change.send(data.entity, event)
+      }
+```
+
+### Destroy event end
+
+Near our `create_block` we can add `destroy_block`. 
+It's gonna be pretty similar:
+
+```wren
+//system/grid.modifier.wren...System
+destroy_block(data: Data, x: Num, y: Num) {
+  var event: GridChange = change.prepare()
+      event.coord = [x, y]
+      event.change = GridChangeType.destroy
+      event.start = false
+  change.send(data.entity, event)
+  set_cell(data, x, y, 0)
+}
+```
+
+And we also have to update a few places to use it. 
+There's the end of the destroy task, but there's also some nuance.
+
+```diff lang=wren
+if(busy.done) {
+
+  if(busy.kind == Busy.DESTROY) {
+-    set_cell(data, busy.x, busy.y, 0)
++    destroy_block(data, busy.x, busy.y)
+  }
+```
+
+### Swap event start
+
+We'll add a few lines to our `swap` function to send the start event.
+Since 'start' is the default, we don't need to set it.
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
+  if (!is_adjacent(x1, y1, x2, y2)) return false
+
+  var busy = mark_busy(x1, y1, Busy.SWAP)
+      busy.dest_x = x2
+      busy.dest_y = y2
+      busy.wait = 0.5
+
+  var busy2 = mark_busy(x2, y2, Busy.SWAP)
+      busy2.primary = false
+      busy2.dest_x = x1 
+      busy2.dest_y = y1
+      busy2.wait = 0.5
+
++  var event: GridChange = change.prepare()
++      event.coord = [x1, y1]
++      event.other = [x2, y2]
++      event.change = GridChangeType.swap
++  change.send(data.entity, event)
+
+} //swap
+```
+
+### Swap event end
+
+And the end event is inside `complete_swap`:
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+complete_swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
+
+  var temp = get_cell(data, x1, y1)
+  set_cell(data, x1, y1, get_cell(data, x2, y2))
+  set_cell(data, x2, y2, temp)
+
++  var event: GridChange = change.prepare()
++      event.coord = [x1, y1]
++      event.other = [x2, y2]
++      event.change = GridChangeType.swap
++      event.start = false
++  change.send(data.entity, event)
+```
+
+### Move event start
+
+We also need to handle the move change. Much like swap, it changes the nature of the grid, so we should make sure our visuals are synced.
+
+A move is effectively a swap! So we can reuse the swap event, and let it get handled that way.
+Inside `drop_blocks` add these lines:
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+var busy = mark_busy(x, y, Busy.MOVE)
+busy.dest_y = write_y
+busy.wait = 0.1
++var event: GridChange = change.prepare()
++  event.coord = [x, write_y]
++  event.other = [x, y]
++  event.change = GridChangeType.swap
++change.send(data.entity, event)
+```
+
+### Move event end
+
+And we now need to add the end event too. This is inside `tick_busy`:
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+// If the task is done, handle the outcome
+if(busy.done) {
+
+  if(busy.kind == Busy.DESTROY) {
+    destroy_block(data, busy.x, busy.y)
+  }
+
+  if(busy.kind == Busy.MOVE) {
++    var event: GridChange = change.prepare()
++        event.coord = [busy.x, busy.dest_y]
++        event.other = [busy.x, busy.y]
++        event.change = GridChangeType.swap
++        event.start = false
++    change.send(data.entity, event)
+
+    var kind = get_cell(data, busy.x, busy.y)
+    set_cell(data, busy.x, busy.dest_y, get_cell(data, busy.x, busy.y))
+    set_cell(data, busy.x, busy.y, 0)
+  }
+```
+
+## Timing polish
+
+Our animation is about 1 second long, in our `swap` visuals, we set the animation rate to `2`.
+So we can change our swap timing to `0.5` seconds to roughly match: 
+
+```diff lang=wren
+//system/grid.modifier.wren...System
+swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
+  if (!is_adjacent(x1, y1, x2, y2)) return false
+
+  var busy = mark_busy(x1, y1, Busy.SWAP)
+      busy.dest_x = x2
+      busy.dest_y = y2
++      busy.wait = 0.5
+
+  var busy2 = mark_busy(x2, y2, Busy.SWAP)
+      busy2.primary = false
+      busy2.dest_x = x1 
+      busy2.dest_y = y1
++      busy2.wait = 0.5
+```
+
+## The result
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/grid.withshapes.mp4" type="video/mp4"></source>
+</video>
+
+## Sprites only
+
+Inside `grid_visuals.modifier.wren` in the `tick` function of our `System`, we can turn off the `Draw` version by commenting out that line:
+
+```diff lang=wren ins="//"
+//system/grid_visuals.modifier.wren...System
++// Draw.ngon_solid(draw, ...)
+```
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/grid.noshapes.mp4" type="video/mp4"></source>
+</video>
+
+## Bonus: no randomness (Random seed)
+
+While testing, it can be convenient to see the same grid every time, 
+so you can log stuff to console and it still being valid after each change.
+
+The `Random.new()` version we use in our `Grid` is "using a default seed". 
+That makes it random every time, but we can use a fixed seed: `Random.new(3)`.
+
+The seed is _the starting point_ of the random numbers, like, a plant seed! 
+
+It controls what number comes next. If you specify the same seed, the same number comes next.
+
+This is also typically useful in games that rely on randomness, you might save the seed and restore it for the player.
+
+## Bonus: speed control 
+
+It can be really useful to speed up or slow down time in the game to test things.
+Is something going wrong? I don't know, the animation is too quick?! Slow everything down!
+Need to skip some parts? Speed it up! 
+
+You can use this for debugging, spotting bugs and such, or for gameplay. 
+In our game [Mossfield Origins](https://anypercent.studio/mossfield-origins/) the 
+game has a speed control, which directly sets the world rate! Very little effort if you design for it.
+
+We can do that with `World.set_rate` which controls the update rate of the world.
+`0` would be paused, `1` would be normal speed, `2` is twice as fast and `0.5` is half speed.
+
+In our main `game.wren` tick function, we can add a quick debug key to try it out:
+- press `S` to slow down
+- press `F` to go fast
+
+```diff lang=wren
+//game.wren
+tick(delta: Num) {
+
++  if(Input.key_state_released(Key.key_s)) {
++    if(World.get_rate(world) == 1) {
++      World.set_rate(world, 0.1)
++    } else {
++      World.set_rate(world, 1)
++    }
++  }
++
++  if(Input.key_state_released(Key.key_f)) {
++    if(World.get_rate(world) == 1) {
++      World.set_rate(world, 4)
++    } else {
++      World.set_rate(world, 1)
++    }
++  }
+
+  if(Input.key_state_released(Key.escape)) {
+    IO.shutdown()
+  }
+
+} //tick
+```
+
+Here's how it looks slowed down to 10% speed (`S` key):
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/world.rate.slow.mp4" type="video/mp4"></source>
+</video>
+
+Here's how it looks sped up to 4x speed (`F` key):
+
+<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
+  <source src="/video/tutorials/match3/world.rate.fast.mp4" type="video/mp4"></source>
+</video>
+
+
+## Try this on your own
+
+<Card title="Add score" icon="up-arrow">
+The grid emits the kind of block being destroyed by a match. Use it to implement score.
+Is the score owned by the game, or by the `Grid` system? A new system?  
+</Card>
+
+<Card title="Hint" icon="magnifier">
+The grid system provides a way to find if there are _any_ matches.
+Try adapt that code to answer "where are there any matches". 
+Use that to highlight the first match found with `Sprite` shine effects. 
+</Card>
+
+<Card title="Sounds" icon="seti:audio">
+Sounds make a big difference to polish. 
+Like the [Getting Started audio tutorial](/getting-started/audio) you can get some free sounds and add audio to enhance the experience.
+</Card>
