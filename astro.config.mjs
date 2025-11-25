@@ -10,8 +10,9 @@ import yarnGrammar from "./src/grammars/yarnspinner.tmLanguage.json";
 
 // https://astro.build/config
 export default defineConfig({
-  markdown: {
-    shikiConfig: {
+	base: 'next',
+	markdown: {
+		shikiConfig: {
 			langs: [
 				{
 					...luxeGrammar,
@@ -22,7 +23,7 @@ export default defineConfig({
 					aliases: ["yarn"],
 				}
 			]
-    },
+		},
 	},	
 	integrations: [
 		starlight({
@@ -60,8 +61,8 @@ export default defineConfig({
 			plugins: [
 				starlightAutoSidebar(),
 				catppuccin({
-          dark: { flavor: "mocha", accent: "mauve" },
-          light: { flavor: "latte", accent: "pink" }
+					dark: { flavor: "mocha", accent: "mauve" },
+					light: { flavor: "latte", accent: "pink" }
 				}),
 				starlightKbd({
 					types: [
