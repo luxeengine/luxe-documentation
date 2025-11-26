@@ -7,6 +7,8 @@ import { Steps } from '@astrojs/starlight/components';
 import { Badge } from '@astrojs/starlight/components';
 import { FileTree } from '@astrojs/starlight/components';
 import { Card } from '@astrojs/starlight/components';
+import Video from '@/components/Video.astro';
+import PublicImg from '@/components/PublicImg.astro';
 
 <Badge text="Complexity: low" variant="success" />
 <Badge text="Game Tutorial" variant="tip" />
@@ -21,9 +23,7 @@ In this tutorial we'll:
 
 Here's the end result, with sprites and animations!
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/grid.noshapes.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/grid.noshapes.mp4" />
 
 ## Sprite visuals: why?
 
@@ -66,27 +66,27 @@ We've made a few sprites for this tutorial. You can save these images into your 
 
 ---
 Star - [Download](/images/tutorials/match3/star.png):
-![](/images/tutorials/match3/star.png)
+<PublicImg src="/images/tutorials/match3/star.png"/>
 
 ---
 Circle - [Download](/images/tutorials/match3/circle.png):
-![](/images/tutorials/match3/circle.png)
+<PublicImg src="/images/tutorials/match3/circle.png"/>
 
 --- 
 Triangle - [Download](/images/tutorials/match3/triangle.png): 
-![](/images/tutorials/match3/triangle.png)
+<PublicImg src="/images/tutorials/match3/triangle.png"/>
 
 --- 
 Square - [Download](/images/tutorials/match3/square.png):
-![](/images/tutorials/match3/square.png)
+<PublicImg src="/images/tutorials/match3/square.png"/>
 
 --- 
 Pentagon - [Download](/images/tutorials/match3/pentagon.png):
-![](/images/tutorials/match3/pentagon.png)
+<PublicImg src="/images/tutorials/match3/pentagon.png"/>
 
 --- 
 Hexagon - [Download](/images/tutorials/match3/hexagon.png):
-![](/images/tutorials/match3/hexagon.png)
+<PublicImg src="/images/tutorials/match3/hexagon.png"/>
 
 ## Sprite Animation
 
@@ -123,9 +123,7 @@ construct ready() {
 } //ready
 ```
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/sprite.animate.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/sprite.animate.mp4" />
 
 ## Grid change events
 
@@ -360,9 +358,7 @@ create_block(entity: Entity, event: GridChange) {
 
 That should look something like this!
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/grid.sprites.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/grid.sprites.mp4" />
 
 ### Tracking and cleaning up
 
@@ -460,9 +456,7 @@ create_block(entity: Entity, event: GridChange) {
 
 And just like that! We can see the shapes match the `Draw` versions.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/grid.sprites.1.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/grid.sprites.1.mp4" />
 
 ### Single frame animation
 
@@ -791,9 +785,7 @@ swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
 
 ## The result
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/grid.withshapes.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/grid.withshapes.mp4" />
 
 ## Sprites only
 
@@ -804,9 +796,7 @@ Inside `grid_visuals.modifier.wren` in the `tick` function of our `System`, we c
 +// Draw.ngon_solid(draw, ...)
 ```
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/grid.noshapes.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/grid.noshapes.mp4" />
 
 ## Bonus: no randomness (Random seed)
 
@@ -868,15 +858,11 @@ tick(delta: Num) {
 
 Here's how it looks slowed down to 10% speed (`S` key):
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/world.rate.slow.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/world.rate.slow.mp4" />
 
 Here's how it looks sped up to 4x speed (`F` key):
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/world.rate.fast.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/world.rate.fast.mp4" />
 
 
 ## Try this on your own

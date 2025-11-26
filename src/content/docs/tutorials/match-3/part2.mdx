@@ -4,6 +4,7 @@ description: A tutorial on making a match 3
 ---
 
 import { Badge } from '@astrojs/starlight/components';
+import Video from '@/components/Video.astro';
 
 <Badge text="Complexity: low" variant="success" />
 <Badge text="Game Tutorial" variant="tip" />
@@ -20,9 +21,7 @@ In this tutorial we'll:
 
 Part 2 will animate the changes to the grid, and looks something like this:
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/timings.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/timings.mp4" />
 
 ## Feedback for the player is crucial
 
@@ -467,9 +466,7 @@ if(busy.done) {
 
 If we ran the game, we can see that the match happens, it waits for 1 second, and then it does the rest! And there's a second match as a result, it also waits.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/destroy.wait.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/destroy.wait.mp4" />
 
 ## Animate the destroy
 
@@ -520,9 +517,7 @@ for(y in 0 ... data.height) {
 
 And there we go! If we run the game, notice how much easier it is to understand the changes:
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/destroy.animate.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/destroy.animate.mp4" />
 
 ## Animate the create
 
@@ -568,9 +563,7 @@ if(busy.kind == Busy.DESTROY) {
 
 Now we can see the new tiles are animating too:
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/create.animate.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/create.animate.mp4" />
 
 ## Animate drops
 
@@ -652,9 +645,7 @@ if(busy.kind == Busy.CREATE) {
 
 Even easier to understand what's happening visually! We're going to tweak the timings later to feel better.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/move.animate.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/move.animate.mp4" />
 
 ## Animate the swap 
 
@@ -732,9 +723,7 @@ if(busy.kind == Busy.MOVE) {
 
 Now we can see all the mechanics in the game working with animated timing...
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/swap.animate.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/swap.animate.mp4" />
 
 ## Final touches
 
@@ -758,9 +747,7 @@ Inside `drop_blocks` we'll change the wait line:
 
 And if we run the game now, it plays a lot more fluid!
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/timings.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/timings.mp4" />
 
 ## Next time!
 

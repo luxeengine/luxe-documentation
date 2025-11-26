@@ -7,6 +7,7 @@ sidebar:
 
 import { Kbd } from 'starlight-kbd/components'
 import { Card } from '@astrojs/starlight/components';
+import Video from '@/components/Video.astro';
 
 This tutorial is an introduction to working with the luxe editor, not a complete guide.
 
@@ -79,9 +80,7 @@ The second behaves a lot like 'alt-tab' or app switching in your OS. When you pr
 The video has flipping between contexts quickly, flashing between them.  
 :::
 
-<video preload="auto" controls="" style="max-width:100%; width:auto; margin:auto; display:block;">  
-  <source src="/video/getting-started/editor/editor.7.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/editor/editor.7.mp4" />
 
 :::tip[Do this]{icon="seti:todo"}
 Switch to the world context to continue!
@@ -380,9 +379,7 @@ Set the transform scale to `0.4 0.4 1` for the flower instance.
 Now as the last step we'll cover here, we can use the white square part of the gizmo to translate on the XY axis - both at the same time.
 We'll position our flower somewhere on the top of the pillar.
 
-<video preload="auto" autoplay controls="" loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">  
-  <source src="/video/getting-started/editor/create.instance.3.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/editor/create.instance.3.mp4" />
 
 ## Your turn
 

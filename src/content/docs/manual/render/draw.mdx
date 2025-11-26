@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import { LinkCard } from '@astrojs/starlight/components';
+import Video from '@/components/Video.astro';
 
 <LinkCard title="There's a tutorial where we make a game using `Draw` here! Start there" href="/getting-started/draw-and-input/" />
 
@@ -113,9 +114,7 @@ We also move the variables to class variables, so that we can see them from the 
 
 With that drawing happening, we should now see a box animating like the one shown below.
 
-<video preload="auto" autoplay controls="" loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">  
-  <source src="https://i.imgur.com/uEcGrkB.mp4" type="video/mp4"></source>
-</video>
+<Video src="https://i.imgur.com/uEcGrkB.mp4" />
 
 ## Multiple contexts
 

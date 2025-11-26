@@ -1,0 +1,21 @@
+---
+interface Props {
+  src: string;
+}
+
+const { src } = Astro.props;
+const base = import.meta.env.BASE_URL || "";
+const videoSrc = src.startsWith('/') ? `${base}${src}` : src;
+---
+
+<video
+  preload="auto"
+  autoplay
+  controls
+  muted
+  playsinline
+  loop
+  style="max-width:100%; width:auto; margin:auto; display:block;"
+>
+  <source src={src} type="video/mp4" />
+</video>

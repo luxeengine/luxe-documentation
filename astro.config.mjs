@@ -8,9 +8,12 @@ import starlightAutoSidebar from 'starlight-auto-sidebar';
 import luxeGrammar from "./src/grammars/luxe.tmLanguage.json";
 import yarnGrammar from "./src/grammars/yarnspinner.tmLanguage.json";
 
+//This is used for versioning the documentation, you set this to the version for the given branch
+import { version_path } from './version-path.mjs';
+
 // https://astro.build/config
 export default defineConfig({
-	base: 'next',
+	// outDir: `./${version_path}`,
 	markdown: {
 		shikiConfig: {
 			langs: [

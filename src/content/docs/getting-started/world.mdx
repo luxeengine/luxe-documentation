@@ -8,6 +8,7 @@ sidebar:
 import { Kbd } from 'starlight-kbd/components'
 import { Card } from '@astrojs/starlight/components';
 import { FileTree } from '@astrojs/starlight/components';
+import Video from '@/components/Video.astro';
 
 :::tip[Outcome / Goals]{icon="puzzle"}
 - In this tutorial we'll **use the World api** to put something on screen
@@ -195,9 +196,7 @@ Arcade.set_debug_draw_enabled(world, true)
 
 If you run this now, you should see the bee falling off the bottom of the world!
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/arcade.2.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/arcade.2.mp4" />
 
 ## Loading a scene
 
@@ -243,9 +242,7 @@ construct ready() {
 
 With that, we'll see the clouds, some buildings, a gradient and we'll see the floor collider. The bee will bounce off the floor, and we're ready for the next step.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/arcade.3.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/arcade.3.mp4" />
 
 ## Named input events
 
@@ -310,9 +307,7 @@ tick(delta: Num) {
 ```
 
 Now when we run the game and press <Kbd default="Up"/>/<Kbd default="W"/>/<Kbd default="X"/>/<Kbd default="Space"/> the bee will jump upward. 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/arcade.4.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/arcade.4.mp4" />
 
 ## Player position and speed
 
@@ -343,9 +338,7 @@ tick(delta: Num) {
 
 Now when we play, we have a couple jumps before we leave the screen, and our bee is in a nice place for the game.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/arcade.5.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/arcade.5.mp4" />
 
 ## Create a Prototype instance
 
@@ -551,9 +544,7 @@ When the pillar goes off screen, we should see this in the log, because of the c
 The `Frame.end {}` runs a function at the end of the frame. This is a WIP requirement for this `Entity.destroy`
 :::
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/modifier.1.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/modifier.1.mp4" />
 
 ## More pillars
 
@@ -627,9 +618,7 @@ Add the following code inside `ready` and after `ready`.
 
 You can see here we bounce off the top of things, but when we hit the side wall, we stop.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/collision.1.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/collision.1.mp4" />
 
 ## Polishing
 
@@ -671,9 +660,7 @@ handle_collision() {
 } //handle_collision
 ```
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/collision.2.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/collision.2.mp4" />
 
 ## Reset
 
@@ -754,9 +741,7 @@ One more tweak, now that we know it is working: turn off the debug drawer! We us
 // Arcade.set_debug_draw_enabled(world, true)
 ```
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/getting-started/world/final.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/getting-started/world/final.mp4" />
 
 ## Try this
 

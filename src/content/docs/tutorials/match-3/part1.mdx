@@ -7,6 +7,7 @@ sidebar:
 
 import { Steps } from '@astrojs/starlight/components';
 import { Badge } from '@astrojs/starlight/components';
+import Video from '@/components/Video.astro';
 
 <Badge text="Complexity: low" variant="success" />
 <Badge text="Game Tutorial" variant="tip" />
@@ -25,9 +26,7 @@ In this tutorial we'll:
 
 In part 1, we'll be making something that looks like this: 
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/swap.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/swap.mp4"/>
 
 ## Moving parts
 
@@ -654,9 +653,7 @@ complete_swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
 
 Here's what that looks like now:   
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/swap.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/swap.mp4" />
 
 ## Finding matches
 
@@ -755,9 +752,7 @@ complete_swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
 
 If we look in the log below the window, we'll see the number of matches being printed:
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/matches.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/matches.mp4" />
 
 ## Processing matches
 
@@ -800,9 +795,7 @@ complete_swap(data: Data, x1: Num, y1: Num, x2: Num, y2: Num) {
 
 And now whenever there's a swap, we can see the pieces being removed from the board:
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/process_matches.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/process_matches.mp4" />
 
 ## Dropping blocks 
 
@@ -854,9 +847,7 @@ process_matches(data: Data) {
 
 If you look closely at the grid before and after, you can see the items above the match are moved down to fill the space where the match takes place.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/dropping_blocks.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/dropping_blocks.mp4" />
 
 ## Filling the gaps 
 
@@ -906,9 +897,7 @@ process_matches(data: Data) {
 
 And if we look closely again (it can be tricky to tell!) the spaces are now filled in.
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/filling_blocks.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/filling_blocks.mp4" />
 
 ## Cascading changes 
 
@@ -942,9 +931,7 @@ process_matches(data: Data) {
 
 It's still pretty hard to tell what's happening! Especially when there are multiple rounds of changes!
 
-<video preload="auto" autoplay controls muted playinsline loop="loop" style="max-width:100%; width:auto; margin:auto; display:block;">
-  <source src="/video/tutorials/match3/cascading_changes.mp4" type="video/mp4"></source>
-</video>
+<Video src="/video/tutorials/match3/cascading_changes.mp4" />
 
 ## Bonus logic 
 
