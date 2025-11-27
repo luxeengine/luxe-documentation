@@ -30,6 +30,17 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'luxe docs',
+			head: [
+				{
+					tag: 'script',
+					attrs: {
+						// Tweaks to the script URL or attributes can be made here.
+						src: 'https://stats.anypercent.studio/script.js',
+						'data-website-id': 'f606ae51-5dc7-4613-81c9-40201fc7451b',
+						defer: true,
+					},
+				},
+			],
 			expressiveCode: {
 				useStarlightDarkModeSwitch: true,
 				useStarlightUiThemeColors: true,
@@ -75,6 +86,7 @@ export default defineConfig({
 				}),
 			]
 		}),
+		
 	],
 	vite: {
 		resolve: {
