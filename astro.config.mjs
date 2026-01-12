@@ -36,7 +36,7 @@ export default defineConfig({
 					attrs: {
 						// Tweaks to the script URL or attributes can be made here.
 						src: 'https://stats.anypercent.studio/script.js',
-						'data-website-id': 'f606ae51-5dc7-4613-81c9-40201fc7451b',
+						'data-website-id': '45f2644a-ea8c-4402-85c6-0a844d58b3c7',
 						defer: true,
 					},
 				},
